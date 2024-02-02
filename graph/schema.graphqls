@@ -1,0 +1,47 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+enum SpecialOrders  {
+    no_bacon,
+    no_cheese,
+    no_salat,
+    garlic_mayo,
+    chili_mayo,
+    gluten_free_bun,
+    vegetarian_patty
+
+
+}
+type User {
+    id: ID!
+    name: String!
+    email: String!
+}
+
+type BurgerDay {
+    id: ID!
+    author: User!
+    date: String!
+    orders: [Order!]!
+}
+
+type Order {
+    id: ID!
+    burgerDay: BurgerDay!
+    user: User!
+    specialRequest: [SpecialOrders!]!
+}
+
+type Query {
+    todays_burgers: BurgerDay
+}
+
+
+type Mutation {
+    orderBurger(user_id: ID!, burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
+    start_burger_day(author_id: ID!): BurgerDay!
+    create_user(name: String!, email: String!): User!
+}
+
+
