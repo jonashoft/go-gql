@@ -1,5 +1,5 @@
 # Start from the official Go image to ensure we have a full Go environment.
-FROM golang:1.18 as builder
+FROM golang:1.21 as builder
 
 # Set the working directory inside the container.
 WORKDIR /app
@@ -9,7 +9,7 @@ COPY go.mod .
 COPY go.sum .
 
 # Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed.
-RUN go mod download
+RUN go mod download -x
 
 # Copy the source code into the container.
 COPY . .
