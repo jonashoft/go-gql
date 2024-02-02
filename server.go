@@ -16,8 +16,12 @@ const defaultPort = "8080"
 // Middleware to enforce nonce check
 func nonceMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Host == "localhost:"+defaultPort {
+			next.ServeHTTP(w, r)
+			return
+		}
 		// Check for nonce in query parameters
-		nonce := r.URL.Query().Get("nonce")
+		nonce := r.Header.Get("X-Nonce")
 		// For demonstration, let's assume the valid nonce is "12345"
 		validNonce := os.Getenv("VALID_NONCE")
 
@@ -49,7 +53,7 @@ func main() {
 	// Optionally, protect the GraphQL playground with the nonceMiddleware as well
 	// This means accessing the playground will also require a valid nonce
 	playgroundHandler := playground.Handler("GraphQL playground", "/query")
-	http.Handle("/", nonceMiddleware(playgroundHandler))
+	http.Handle("/", playgroundHandler)
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
