@@ -5,6 +5,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	"graphql-go/graph/model"
+	"os"
 	"strings"
 )
 
@@ -41,12 +42,26 @@ func createSchema(db *pg.DB) error {
 }
 
 func Connect() *pg.DB {
-	db := pg.Connect(&pg.Options{
-		Addr:     ":5432",
-		User:     "postgres",
-		Password: "changeme",
-		Database: "gogql",
-	})
+	// Check if the DB_URL environment variable is set.
+	dbURL := os.Getenv("DB_URL")
+	var db *pg.DB
+
+	if dbURL != "" {
+		// Parse the DATABASE_URL environment variable.
+		opt, err := pg.ParseURL(dbURL)
+		if err != nil {
+			panic(err) // Handle error appropriately in real applications
+		}
+		db = pg.Connect(opt)
+	} else {
+		// Use hardcoded values for local development.
+		db = pg.Connect(&pg.Options{
+			Addr:     "localhost:5432",
+			User:     "postgres",
+			Password: "changeme",
+			Database: "gogql",
+		})
+	}
 
 	EnsureMigrated(db)
 
