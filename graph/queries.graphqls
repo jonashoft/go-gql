@@ -1,0 +1,9 @@
+extend type Query {
+  # Get a list of all the users
+  users: [User!]!
+  user(id: ID!): User
+  burger_days: [BurgerDay!]!
+  burger_day(id: ID!): BurgerDay
+  orders: [Order!]!
+  order(id: ID!): Order
+}

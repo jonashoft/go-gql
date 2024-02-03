@@ -75,6 +75,13 @@ func UserToModel(user *User) *model.User {
 		Email: user.Email,
 	}
 }
+func UsersToModels(users []*User) []*model.User {
+	models := make([]*model.User, len(users))
+	for i, user := range users {
+		models[i] = UserToModel(user)
+	}
+	return models
+}
 
 func BurgerDayToModel(burgerDay *BurgerDay) *model.BurgerDay {
 	return &model.BurgerDay{
@@ -83,6 +90,15 @@ func BurgerDayToModel(burgerDay *BurgerDay) *model.BurgerDay {
 		AuthorId: burgerDay.AuthorId,
 	}
 }
+
+func BurgerDaysToModels(burgerDays []*BurgerDay) []*model.BurgerDay {
+	models := make([]*model.BurgerDay, len(burgerDays))
+	for i, burgerDay := range burgerDays {
+		models[i] = BurgerDayToModel(burgerDay)
+	}
+	return models
+}
+
 func StringsToSpecialOrders(strings []string) ([]model.SpecialOrders, error) {
 	specialOrders := make([]model.SpecialOrders, len(strings))
 	for i, s := range strings {
