@@ -6,135 +6,115 @@ package graph
 
 import (
 	"context"
-	"graphql-go/db"
-	"graphql-go/graph/model"
-	"time"
-
 	"github.com/google/uuid"
+	"graphql-go/graph/model"
+	"graphql-go/persistence"
 )
 
 // Author is the resolver for the author field.
 func (r *burgerDayResolver) Author(ctx context.Context, obj *model.BurgerDay) (*model.User, error) {
-	user := &db.User{ID: obj.AuthorId}
-
-	err := r.DB.Model(user).WherePK().Select()
-	if err != nil {
-		panic(err)
+	user := &persistence.User{ID: obj.AuthorId}
+	res := r.DB.First(user)
+	if res.Error != nil {
+		return nil, res.Error // It's better to return the error rather than panic, to handle it gracefully
 	}
-	return db.UserToModel(user), nil
+
+	// Assuming persistence.UserToModel converts a persistence.User to a *model.User
+	return persistence.UserToModel(user), nil
 }
 
 // Orders is the resolver for the orders field.
 func (r *burgerDayResolver) Orders(ctx context.Context, obj *model.BurgerDay) ([]*model.Order, error) {
-	var orders []*db.Order
-	err := r.DB.Model(&orders).Where("burger_day_id = ?", obj.ID).Select()
-	if err != nil {
-		panic(err)
+	var orders []*persistence.Order
+
+	res := r.DB.Where("burger_day_id = ?", obj.ID).Find(&orders)
+	if res.Error != nil {
+		return nil, res.Error
 	}
-	return db.OrdersToModels(orders), nil
+
+	return persistence.OrdersToModels(orders), nil
+
 }
 
 // OrderBurger is the resolver for the orderBurger field.
 func (r *mutationResolver) OrderBurger(ctx context.Context, userID string, burgerDayID string, specialRequest []model.SpecialOrders) (*model.Order, error) {
-	user := &db.User{ID: userID}
-	err1 := r.DB.Model(user).WherePK().Select()
-	burger := &db.BurgerDay{ID: burgerDayID}
-	err2 := r.DB.Model(burger).WherePK().Select()
-	if err1 != nil || err2 != nil {
-		panic(err1)
-	}
-
-	order := &db.Order{
+	order := &persistence.Order{
 		ID:             uuid.New().String(),
-		BurgerDay:      burger,
-		BurgerDayId:    burger.ID,
-		User:           user,
-		UserId:         user.ID,
-		SpecialRequest: db.SpecialOrdersToStrings(specialRequest),
+		UserId:         userID,
+		BurgerDayId:    burgerDayID,
+		SpecialRequest: persistence.SpecialOrdersToStrings(specialRequest),
 	}
 
-	_, err3 := r.DB.Model(order).Insert()
-	if err3 != nil {
-		panic(err3)
+	res := r.DB.Create(order)
+	if res.Error != nil {
+		return nil, res.Error
 	}
 
-	return db.OrderToModel(order), nil
+	return persistence.OrderToModel(order), nil
 }
 
 // StartBurgerDay is the resolver for the start_burger_day field.
 func (r *mutationResolver) StartBurgerDay(ctx context.Context, authorID string) (*model.BurgerDay, error) {
-	now := time.Now().Format("2006-01-02")
-	user := &db.User{ID: authorID}
-	err1 := r.DB.Model(user).WherePK().Select()
-	if err1 != nil {
-		panic(err1)
-	}
-
-	bday := &db.BurgerDay{
+	burgerDay := &persistence.BurgerDay{
 		ID:       uuid.New().String(),
-		Author:   user,
-		AuthorId: user.ID,
-		Date:     now,
+		AuthorId: authorID,
 	}
 
-	_, err2 := r.DB.Model(bday).Insert()
-	if err2 != nil {
-		panic(err2)
+	res := r.DB.Create(burgerDay)
+	if res.Error != nil {
+		return nil, res.Error
 	}
-	return db.BurgerDayToModel(bday), nil
+
+	return persistence.BurgerDayToModel(burgerDay), nil
 }
 
 // CreateUser is the resolver for the create_user field.
 func (r *mutationResolver) CreateUser(ctx context.Context, name string, email string) (*model.User, error) {
-	user := &db.User{
+	user := &persistence.User{
 		ID:    uuid.New().String(),
 		Name:  name,
 		Email: email,
 	}
 
-	_, _ = r.DB.Model(user).Insert()
+	res := r.DB.Create(user)
+	if res.Error != nil {
+		return nil, res.Error
+	}
 
-	return db.UserToModel(user), nil
+	return persistence.UserToModel(user), nil
 }
 
 // BurgerDay is the resolver for the burgerDay field.
 func (r *orderResolver) BurgerDay(ctx context.Context, obj *model.Order) (*model.BurgerDay, error) {
-	bday := &db.BurgerDay{ID: obj.BurgerDayId}
-	err := r.DB.Model(bday).WherePK().Select()
-	if err != nil {
-		panic(err)
+	burgerDay := &persistence.BurgerDay{}
+	res := r.DB.First(burgerDay, obj.BurgerDayId)
+	if res.Error != nil {
+		return nil, res.Error
 	}
-	return db.BurgerDayToModel(bday), nil
+
+	return persistence.BurgerDayToModel(burgerDay), nil
 }
 
 // User is the resolver for the user field.
 func (r *orderResolver) User(ctx context.Context, obj *model.Order) (*model.User, error) {
-	user := &db.User{ID: obj.UserId}
-	err := r.DB.Model(user).WherePK().Select()
-	if err != nil {
-		panic(err)
+	user := &persistence.User{}
+	res := r.DB.First(user, obj.UserId)
+	if res.Error != nil {
+		return nil, res.Error
 	}
-	return db.UserToModel(user), nil
+
+	return persistence.UserToModel(user), nil
 }
 
 // TodaysBurgers is the resolver for the todays_burgers field.
 func (r *queryResolver) TodaysBurgers(ctx context.Context) (*model.BurgerDay, error) {
-	currentDate := time.Now().Format("2006-01-02")
-
-	burgerDay := &db.BurgerDay{}
-	// Use the formatted currentDate in the WHERE clause
-	err := r.DB.Model(burgerDay).
-		Where("date = ?", currentDate).
-		First()
-
-	if err != nil {
-		// Handle errors gracefully
-		return nil, err
+	burgerDay := &persistence.BurgerDay{}
+	res := r.DB.Last(burgerDay)
+	if res.Error != nil {
+		return nil, res.Error
 	}
 
-	// Convert the database model to your GraphQL model
-	// Ensure db.BurgerDayToModel exists and performs the necessary conversion
-	return db.BurgerDayToModel(burgerDay), nil
+	return persistence.BurgerDayToModel(burgerDay), nil
 }
 
 // BurgerDay returns BurgerDayResolver implementation.

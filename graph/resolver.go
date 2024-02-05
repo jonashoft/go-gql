@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"github.com/go-pg/pg/v10"
+	"gorm.io/gorm"
 )
 
 //go:generate go run github.com/99designs/gqlgen generate
@@ -11,5 +11,5 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	DB *pg.DB
+	DB *gorm.DB
 }

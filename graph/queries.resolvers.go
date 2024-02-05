@@ -6,49 +6,80 @@ package graph
 
 import (
 	"context"
-	"graphql-go/db"
 	"graphql-go/graph/model"
+	"graphql-go/persistence"
 )
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+	var users []*persistence.User
+	res := r.DB.Find(&users)
 
-	var users []*db.User
-	err := r.DB.Model(&users).Select()
-	return db.UsersToModels(users), err
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.UsersToModels(users), nil
+
 }
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
-	user := &db.User{ID: id}
-	err := r.DB.Model(user).WherePK().Select()
-	return db.UserToModel(user), err
+	user := persistence.User{}
+	res := r.DB.First(&user, id)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.UserToModel(&user), nil
 }
 
 // BurgerDays is the resolver for the burger_days field.
 func (r *queryResolver) BurgerDays(ctx context.Context) ([]*model.BurgerDay, error) {
-	var burgerDays []*db.BurgerDay
-	err := r.DB.Model(&burgerDays).Select()
-	return db.BurgerDaysToModels(burgerDays), err
+	var burgerDays []*persistence.BurgerDay
+	res := r.DB.Find(&burgerDays)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.BurgerDaysToModels(burgerDays), nil
 }
 
 // BurgerDay is the resolver for the burger_day field.
 func (r *queryResolver) BurgerDay(ctx context.Context, id string) (*model.BurgerDay, error) {
-	burgerDay := &db.BurgerDay{ID: id}
-	err := r.DB.Model(burgerDay).WherePK().Select()
-	return db.BurgerDayToModel(burgerDay), err
+	burgerDay := persistence.BurgerDay{}
+	res := r.DB.First(&burgerDay, id)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.BurgerDayToModel(&burgerDay), nil
 }
 
 // Orders is the resolver for the orders field.
 func (r *queryResolver) Orders(ctx context.Context) ([]*model.Order, error) {
-	var orders []*db.Order
-	err := r.DB.Model(&orders).Select()
-	return db.OrdersToModels(orders), err
+	var orders []*persistence.Order
+
+	res := r.DB.Find(&orders)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.OrdersToModels(orders), nil
 }
 
 // Order is the resolver for the order field.
 func (r *queryResolver) Order(ctx context.Context, id string) (*model.Order, error) {
-	order := &db.Order{ID: id}
-	err := r.DB.Model(order).WherePK().Select()
-	return db.OrderToModel(order), err
+	order := persistence.Order{}
+	res := r.DB.First(&order, id)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.OrderToModel(&order), nil
 }

@@ -8,6 +8,18 @@ import (
 	"strconv"
 )
 
+type BurgerStats struct {
+	TotalOrders     int         `json:"totalOrders"`
+	TotalBurgerDays int         `json:"totalBurgerDays"`
+	TopConsumers    []*Consumer `json:"topConsumers"`
+}
+
+type Consumer struct {
+	User            *User `json:"user"`
+	TotalOrders     int   `json:"totalOrders"`
+	TotalBurgerDays int   `json:"totalBurgerDays"`
+}
+
 type Mutation struct {
 }
 

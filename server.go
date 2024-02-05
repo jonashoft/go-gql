@@ -1,8 +1,8 @@
 package main
 
 import (
-	"graphql-go/db"
 	"graphql-go/graph"
+	"graphql-go/persistence"
 	"log"
 	"net/http"
 	"os"
@@ -44,7 +44,7 @@ func main() {
 
 	// Create your GraphQL server handler
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
-		DB: db.Connect(),
+		DB: persistence.ConnectGORM(),
 	}}))
 
 	// Wrap the /query handler with nonceMiddleware to protect your GraphQL API

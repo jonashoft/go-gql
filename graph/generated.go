@@ -56,6 +56,18 @@ type ComplexityRoot struct {
 		Orders func(childComplexity int) int
 	}
 
+	BurgerStats struct {
+		TopConsumers    func(childComplexity int) int
+		TotalBurgerDays func(childComplexity int) int
+		TotalOrders     func(childComplexity int) int
+	}
+
+	Consumer struct {
+		TotalBurgerDays func(childComplexity int) int
+		TotalOrders     func(childComplexity int) int
+		User            func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateUser     func(childComplexity int, name string, email string) int
 		OrderBurger    func(childComplexity int, userID string, burgerDayID string, specialRequest []model.SpecialOrders) int
@@ -72,6 +84,7 @@ type ComplexityRoot struct {
 	Query struct {
 		BurgerDay     func(childComplexity int, id string) int
 		BurgerDays    func(childComplexity int) int
+		BurgerStats   func(childComplexity int) int
 		Order         func(childComplexity int, id string) int
 		Orders        func(childComplexity int) int
 		TodaysBurgers func(childComplexity int) int
@@ -102,6 +115,7 @@ type OrderResolver interface {
 }
 type QueryResolver interface {
 	TodaysBurgers(ctx context.Context) (*model.BurgerDay, error)
+	BurgerStats(ctx context.Context) (*model.BurgerStats, error)
 	Users(ctx context.Context) ([]*model.User, error)
 	User(ctx context.Context, id string) (*model.User, error)
 	BurgerDays(ctx context.Context) ([]*model.BurgerDay, error)
@@ -156,6 +170,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BurgerDay.Orders(childComplexity), true
+
+	case "BurgerStats.topConsumers":
+		if e.complexity.BurgerStats.TopConsumers == nil {
+			break
+		}
+
+		return e.complexity.BurgerStats.TopConsumers(childComplexity), true
+
+	case "BurgerStats.totalBurgerDays":
+		if e.complexity.BurgerStats.TotalBurgerDays == nil {
+			break
+		}
+
+		return e.complexity.BurgerStats.TotalBurgerDays(childComplexity), true
+
+	case "BurgerStats.totalOrders":
+		if e.complexity.BurgerStats.TotalOrders == nil {
+			break
+		}
+
+		return e.complexity.BurgerStats.TotalOrders(childComplexity), true
+
+	case "Consumer.totalBurgerDays":
+		if e.complexity.Consumer.TotalBurgerDays == nil {
+			break
+		}
+
+		return e.complexity.Consumer.TotalBurgerDays(childComplexity), true
+
+	case "Consumer.totalOrders":
+		if e.complexity.Consumer.TotalOrders == nil {
+			break
+		}
+
+		return e.complexity.Consumer.TotalOrders(childComplexity), true
+
+	case "Consumer.user":
+		if e.complexity.Consumer.User == nil {
+			break
+		}
+
+		return e.complexity.Consumer.User(childComplexity), true
 
 	case "Mutation.create_user":
 		if e.complexity.Mutation.CreateUser == nil {
@@ -239,6 +295,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.BurgerDays(childComplexity), true
+
+	case "Query.burgerStats":
+		if e.complexity.Query.BurgerStats == nil {
+			break
+		}
+
+		return e.complexity.Query.BurgerStats(childComplexity), true
 
 	case "Query.order":
 		if e.complexity.Query.Order == nil {
@@ -409,7 +472,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "queries.graphqls" "schema.graphqls"
+//go:embed "burger_stats.graphqls.graphqls" "queries.graphqls" "schema.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -421,6 +484,7 @@ func sourceData(filename string) string {
 }
 
 var sources = []*ast.Source{
+	{Name: "burger_stats.graphqls.graphqls", Input: sourceData("burger_stats.graphqls.graphqls"), BuiltIn: false},
 	{Name: "queries.graphqls", Input: sourceData("queries.graphqls"), BuiltIn: false},
 	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
 }
@@ -789,6 +853,286 @@ func (ec *executionContext) fieldContext_BurgerDay_orders(ctx context.Context, f
 				return ec.fieldContext_Order_specialRequest(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BurgerStats_totalOrders(ctx context.Context, field graphql.CollectedField, obj *model.BurgerStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BurgerStats_totalOrders(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalOrders, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BurgerStats_totalOrders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BurgerStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BurgerStats_totalBurgerDays(ctx context.Context, field graphql.CollectedField, obj *model.BurgerStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BurgerStats_totalBurgerDays(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalBurgerDays, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BurgerStats_totalBurgerDays(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BurgerStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BurgerStats_topConsumers(ctx context.Context, field graphql.CollectedField, obj *model.BurgerStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BurgerStats_topConsumers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TopConsumers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Consumer)
+	fc.Result = res
+	return ec.marshalNConsumer2ᚕᚖgraphqlᚑgoᚋgraphᚋmodelᚐConsumerᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BurgerStats_topConsumers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BurgerStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "user":
+				return ec.fieldContext_Consumer_user(ctx, field)
+			case "totalOrders":
+				return ec.fieldContext_Consumer_totalOrders(ctx, field)
+			case "totalBurgerDays":
+				return ec.fieldContext_Consumer_totalBurgerDays(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Consumer", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Consumer_user(ctx context.Context, field graphql.CollectedField, obj *model.Consumer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Consumer_user(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Consumer_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Consumer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Consumer_totalOrders(ctx context.Context, field graphql.CollectedField, obj *model.Consumer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Consumer_totalOrders(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalOrders, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Consumer_totalOrders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Consumer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Consumer_totalBurgerDays(ctx context.Context, field graphql.CollectedField, obj *model.Consumer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Consumer_totalBurgerDays(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalBurgerDays, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Consumer_totalBurgerDays(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Consumer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1227,6 +1571,58 @@ func (ec *executionContext) fieldContext_Query_todays_burgers(ctx context.Contex
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BurgerDay", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_burgerStats(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_burgerStats(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().BurgerStats(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.BurgerStats)
+	fc.Result = res
+	return ec.marshalNBurgerStats2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐBurgerStats(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_burgerStats(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "totalOrders":
+				return ec.fieldContext_BurgerStats_totalOrders(ctx, field)
+			case "totalBurgerDays":
+				return ec.fieldContext_BurgerStats_totalBurgerDays(ctx, field)
+			case "topConsumers":
+				return ec.fieldContext_BurgerStats_topConsumers(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BurgerStats", field.Name)
 		},
 	}
 	return fc, nil
@@ -3734,6 +4130,104 @@ func (ec *executionContext) _BurgerDay(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
+var burgerStatsImplementors = []string{"BurgerStats"}
+
+func (ec *executionContext) _BurgerStats(ctx context.Context, sel ast.SelectionSet, obj *model.BurgerStats) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, burgerStatsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BurgerStats")
+		case "totalOrders":
+			out.Values[i] = ec._BurgerStats_totalOrders(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalBurgerDays":
+			out.Values[i] = ec._BurgerStats_totalBurgerDays(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "topConsumers":
+			out.Values[i] = ec._BurgerStats_topConsumers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var consumerImplementors = []string{"Consumer"}
+
+func (ec *executionContext) _Consumer(ctx context.Context, sel ast.SelectionSet, obj *model.Consumer) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, consumerImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Consumer")
+		case "user":
+			out.Values[i] = ec._Consumer_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalOrders":
+			out.Values[i] = ec._Consumer_totalOrders(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalBurgerDays":
+			out.Values[i] = ec._Consumer_totalBurgerDays(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3942,6 +4436,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_todays_burgers(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "burgerStats":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_burgerStats(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -4553,6 +5069,74 @@ func (ec *executionContext) marshalNBurgerDay2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐ
 	return ec._BurgerDay(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNBurgerStats2graphqlᚑgoᚋgraphᚋmodelᚐBurgerStats(ctx context.Context, sel ast.SelectionSet, v model.BurgerStats) graphql.Marshaler {
+	return ec._BurgerStats(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBurgerStats2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐBurgerStats(ctx context.Context, sel ast.SelectionSet, v *model.BurgerStats) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BurgerStats(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNConsumer2ᚕᚖgraphqlᚑgoᚋgraphᚋmodelᚐConsumerᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Consumer) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNConsumer2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐConsumer(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNConsumer2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐConsumer(ctx context.Context, sel ast.SelectionSet, v *model.Consumer) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Consumer(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4560,6 +5144,21 @@ func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface
 
 func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalID(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
