@@ -115,19 +115,23 @@ func OrdersToModels(orders []*Order) []*model.Order {
 // foreign keys, and any other constraints or indexes as needed.
 
 type BurgerDay struct {
-	ID       string   `gorm:"primaryKey" json:"id"`
-	AuthorId string   `json:"authorId"`
-	Author   *User    `gorm:"foreignKey:AuthorId" json:"author"`
-	Date     string   `gorm:"unique;type:text" json:"date"`
-	Orders   []*Order `gorm:"foreignKey:BurgerDayId" json:"orders"`
+	ID            string   `gorm:"primaryKey" json:"id"`
+	AuthorId      string   `json:"authorId"`
+	Author        *User    `gorm:"foreignKey:AuthorId" json:"author"`
+	Date          string   `gorm:"unique;type:text" json:"date"`
+	Price         float64  `gorm:"default:84.0" json:"price"`
+	Closed        bool     `gorm:"default:false" json:"closed"`
+	EstimatedTime string   `gorm:"default:12:00" json:"estimatedDeliveryTime"`
+	Orders        []*Order `gorm:"foreignKey:BurgerDayId" json:"orders"`
 }
 
 type User struct {
-	ID         string       `gorm:"primaryKey" json:"id"`
-	Name       string       `json:"name"`
-	Email      string       `json:"email"`
-	BurgerDays []*BurgerDay `gorm:"foreignKey:AuthorId" json:"burgerDays"`
-	Orders     []*Order     `gorm:"foreignKey:UserId" json:"orders"`
+	ID          string       `gorm:"primaryKey" json:"id"`
+	Name        string       `json:"name"`
+	Email       string       `json:"email"`
+	PhoneNumber string       `json:"phoneNumber"`
+	BurgerDays  []*BurgerDay `gorm:"foreignKey:AuthorId" json:"burgerDays"`
+	Orders      []*Order     `gorm:"foreignKey:UserId" json:"orders"`
 }
 
 type Order struct {
@@ -136,5 +140,6 @@ type Order struct {
 	BurgerDay      *BurgerDay `gorm:"foreignKey:BurgerDayId" json:"BurgerDay"`
 	UserId         string     `json:"userId"`
 	User           *User      `gorm:"foreignKey:UserId" json:"user"`
+	Paid          bool       `gorm:"default:false" json:"paid"`
 	SpecialRequest []string   `gorm:"type:text[]" json:"specialRequest"`
 }

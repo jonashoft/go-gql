@@ -1,3 +1,16 @@
+
+type AccumulatedOrderLine {
+  amount: Int!
+  specialRequest: [SpecialOrders!]!
+}
+type AccumulatedOrders {
+  id: ID!
+  to_order: [AccumulatedOrderLine!]!
+  count: Int!
+
+  
+
+}
 extend type Query {
   # Get a list of all the users
   users: [User!]!
@@ -6,4 +19,6 @@ extend type Query {
   burger_day(id: ID!): BurgerDay
   orders: [Order!]!
   order(id: ID!): Order
+  accumualte_order: AccumulatedOrders
 }
+

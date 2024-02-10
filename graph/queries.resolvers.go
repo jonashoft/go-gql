@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"graphql-go/graph/model"
 	"graphql-go/persistence"
 )
@@ -20,7 +21,6 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	}
 
 	return persistence.UsersToModels(users), nil
-
 }
 
 // User is the resolver for the user field.
@@ -82,4 +82,9 @@ func (r *queryResolver) Order(ctx context.Context, id string) (*model.Order, err
 	}
 
 	return persistence.OrderToModel(&order), nil
+}
+
+// AccumualteOrder is the resolver for the accumualte_order field.
+func (r *queryResolver) AccumualteOrder(ctx context.Context) (*model.AccumulatedOrders, error) {
+	panic(fmt.Errorf("not implemented: AccumualteOrder - accumualte_order"))
 }

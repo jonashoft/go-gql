@@ -6,9 +6,11 @@ package graph
 
 import (
 	"context"
-	"github.com/google/uuid"
+	"fmt"
 	"graphql-go/graph/model"
 	"graphql-go/persistence"
+
+	"github.com/google/uuid"
 )
 
 // Author is the resolver for the author field.
@@ -33,7 +35,6 @@ func (r *burgerDayResolver) Orders(ctx context.Context, obj *model.BurgerDay) ([
 	}
 
 	return persistence.OrdersToModels(orders), nil
-
 }
 
 // OrderBurger is the resolver for the orderBurger field.
@@ -82,6 +83,18 @@ func (r *mutationResolver) CreateUser(ctx context.Context, name string, email st
 	}
 
 	return persistence.UserToModel(user), nil
+}
+
+// PayOrder is the resolver for the pay_order field.
+func (r *mutationResolver) PayOrder(ctx context.Context, orderID string, userID string) (*model.Order, error) {
+	order := &persistence.Order{ID: orderID}
+	res := r.DB.First(order)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	order.Paid = true
+	res = r.DB.Save(order)
+	return persistence.OrderToModel(order), res.Error
 }
 
 // BurgerDay is the resolver for the burgerDay field.
@@ -133,3 +146,4 @@ type burgerDayResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type orderResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+

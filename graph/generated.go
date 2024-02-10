@@ -49,11 +49,25 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AccumulatedOrderLine struct {
+		Amount         func(childComplexity int) int
+		SpecialRequest func(childComplexity int) int
+	}
+
+	AccumulatedOrders struct {
+		Count   func(childComplexity int) int
+		ID      func(childComplexity int) int
+		ToOrder func(childComplexity int) int
+	}
+
 	BurgerDay struct {
-		Author func(childComplexity int) int
-		Date   func(childComplexity int) int
-		ID     func(childComplexity int) int
-		Orders func(childComplexity int) int
+		Author        func(childComplexity int) int
+		Closed        func(childComplexity int) int
+		Date          func(childComplexity int) int
+		EstimatedTime func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Orders        func(childComplexity int) int
+		Price         func(childComplexity int) int
 	}
 
 	BurgerStats struct {
@@ -71,31 +85,35 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateUser     func(childComplexity int, name string, email string) int
 		OrderBurger    func(childComplexity int, userID string, burgerDayID string, specialRequest []model.SpecialOrders) int
+		PayOrder       func(childComplexity int, orderID string, userID string) int
 		StartBurgerDay func(childComplexity int, authorID string) int
 	}
 
 	Order struct {
 		BurgerDay      func(childComplexity int) int
 		ID             func(childComplexity int) int
+		Paid           func(childComplexity int) int
 		SpecialRequest func(childComplexity int) int
 		User           func(childComplexity int) int
 	}
 
 	Query struct {
-		BurgerDay     func(childComplexity int, id string) int
-		BurgerDays    func(childComplexity int) int
-		BurgerStats   func(childComplexity int) int
-		Order         func(childComplexity int, id string) int
-		Orders        func(childComplexity int) int
-		TodaysBurgers func(childComplexity int) int
-		User          func(childComplexity int, id string) int
-		Users         func(childComplexity int) int
+		AccumualteOrder func(childComplexity int) int
+		BurgerDay       func(childComplexity int, id string) int
+		BurgerDays      func(childComplexity int) int
+		BurgerStats     func(childComplexity int) int
+		Order           func(childComplexity int, id string) int
+		Orders          func(childComplexity int) int
+		TodaysBurgers   func(childComplexity int) int
+		User            func(childComplexity int, id string) int
+		Users           func(childComplexity int) int
 	}
 
 	User struct {
-		Email func(childComplexity int) int
-		ID    func(childComplexity int) int
-		Name  func(childComplexity int) int
+		Email       func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+		PhoneNumber func(childComplexity int) int
 	}
 }
 
@@ -108,6 +126,7 @@ type MutationResolver interface {
 	OrderBurger(ctx context.Context, userID string, burgerDayID string, specialRequest []model.SpecialOrders) (*model.Order, error)
 	StartBurgerDay(ctx context.Context, authorID string) (*model.BurgerDay, error)
 	CreateUser(ctx context.Context, name string, email string) (*model.User, error)
+	PayOrder(ctx context.Context, orderID string, userID string) (*model.Order, error)
 }
 type OrderResolver interface {
 	BurgerDay(ctx context.Context, obj *model.Order) (*model.BurgerDay, error)
@@ -122,6 +141,7 @@ type QueryResolver interface {
 	BurgerDay(ctx context.Context, id string) (*model.BurgerDay, error)
 	Orders(ctx context.Context) ([]*model.Order, error)
 	Order(ctx context.Context, id string) (*model.Order, error)
+	AccumualteOrder(ctx context.Context) (*model.AccumulatedOrders, error)
 }
 
 type executableSchema struct {
@@ -143,6 +163,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "AccumulatedOrderLine.amount":
+		if e.complexity.AccumulatedOrderLine.Amount == nil {
+			break
+		}
+
+		return e.complexity.AccumulatedOrderLine.Amount(childComplexity), true
+
+	case "AccumulatedOrderLine.specialRequest":
+		if e.complexity.AccumulatedOrderLine.SpecialRequest == nil {
+			break
+		}
+
+		return e.complexity.AccumulatedOrderLine.SpecialRequest(childComplexity), true
+
+	case "AccumulatedOrders.count":
+		if e.complexity.AccumulatedOrders.Count == nil {
+			break
+		}
+
+		return e.complexity.AccumulatedOrders.Count(childComplexity), true
+
+	case "AccumulatedOrders.id":
+		if e.complexity.AccumulatedOrders.ID == nil {
+			break
+		}
+
+		return e.complexity.AccumulatedOrders.ID(childComplexity), true
+
+	case "AccumulatedOrders.to_order":
+		if e.complexity.AccumulatedOrders.ToOrder == nil {
+			break
+		}
+
+		return e.complexity.AccumulatedOrders.ToOrder(childComplexity), true
+
 	case "BurgerDay.author":
 		if e.complexity.BurgerDay.Author == nil {
 			break
@@ -150,12 +205,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BurgerDay.Author(childComplexity), true
 
+	case "BurgerDay.closed":
+		if e.complexity.BurgerDay.Closed == nil {
+			break
+		}
+
+		return e.complexity.BurgerDay.Closed(childComplexity), true
+
 	case "BurgerDay.date":
 		if e.complexity.BurgerDay.Date == nil {
 			break
 		}
 
 		return e.complexity.BurgerDay.Date(childComplexity), true
+
+	case "BurgerDay.estimatedTime":
+		if e.complexity.BurgerDay.EstimatedTime == nil {
+			break
+		}
+
+		return e.complexity.BurgerDay.EstimatedTime(childComplexity), true
 
 	case "BurgerDay.id":
 		if e.complexity.BurgerDay.ID == nil {
@@ -170,6 +239,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BurgerDay.Orders(childComplexity), true
+
+	case "BurgerDay.price":
+		if e.complexity.BurgerDay.Price == nil {
+			break
+		}
+
+		return e.complexity.BurgerDay.Price(childComplexity), true
 
 	case "BurgerStats.topConsumers":
 		if e.complexity.BurgerStats.TopConsumers == nil {
@@ -237,6 +313,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.OrderBurger(childComplexity, args["user_id"].(string), args["burgerDayId"].(string), args["specialRequest"].([]model.SpecialOrders)), true
 
+	case "Mutation.pay_order":
+		if e.complexity.Mutation.PayOrder == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_pay_order_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PayOrder(childComplexity, args["order_id"].(string), args["user_id"].(string)), true
+
 	case "Mutation.start_burger_day":
 		if e.complexity.Mutation.StartBurgerDay == nil {
 			break
@@ -263,6 +351,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.ID(childComplexity), true
 
+	case "Order.paid":
+		if e.complexity.Order.Paid == nil {
+			break
+		}
+
+		return e.complexity.Order.Paid(childComplexity), true
+
 	case "Order.specialRequest":
 		if e.complexity.Order.SpecialRequest == nil {
 			break
@@ -276,6 +371,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.User(childComplexity), true
+
+	case "Query.accumualte_order":
+		if e.complexity.Query.AccumualteOrder == nil {
+			break
+		}
+
+		return e.complexity.Query.AccumualteOrder(childComplexity), true
 
 	case "Query.burger_day":
 		if e.complexity.Query.BurgerDay == nil {
@@ -368,6 +470,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.Name(childComplexity), true
+
+	case "User.phoneNumber":
+		if e.complexity.User.PhoneNumber == nil {
+			break
+		}
+
+		return e.complexity.User.PhoneNumber(childComplexity), true
 
 	}
 	return 0, false
@@ -551,6 +660,30 @@ func (ec *executionContext) field_Mutation_orderBurger_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_pay_order_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["order_id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order_id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["order_id"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["user_id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_id"))
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["user_id"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_start_burger_day_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -664,6 +797,232 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _AccumulatedOrderLine_amount(ctx context.Context, field graphql.CollectedField, obj *model.AccumulatedOrderLine) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AccumulatedOrderLine_amount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AccumulatedOrderLine_amount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccumulatedOrderLine",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccumulatedOrderLine_specialRequest(ctx context.Context, field graphql.CollectedField, obj *model.AccumulatedOrderLine) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AccumulatedOrderLine_specialRequest(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SpecialRequest, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.SpecialOrders)
+	fc.Result = res
+	return ec.marshalNSpecialOrders2ᚕgraphqlᚑgoᚋgraphᚋmodelᚐSpecialOrdersᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AccumulatedOrderLine_specialRequest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccumulatedOrderLine",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type SpecialOrders does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccumulatedOrders_id(ctx context.Context, field graphql.CollectedField, obj *model.AccumulatedOrders) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AccumulatedOrders_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AccumulatedOrders_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccumulatedOrders",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccumulatedOrders_to_order(ctx context.Context, field graphql.CollectedField, obj *model.AccumulatedOrders) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AccumulatedOrders_to_order(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ToOrder, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.AccumulatedOrderLine)
+	fc.Result = res
+	return ec.marshalNAccumulatedOrderLine2ᚕᚖgraphqlᚑgoᚋgraphᚋmodelᚐAccumulatedOrderLineᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AccumulatedOrders_to_order(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccumulatedOrders",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "amount":
+				return ec.fieldContext_AccumulatedOrderLine_amount(ctx, field)
+			case "specialRequest":
+				return ec.fieldContext_AccumulatedOrderLine_specialRequest(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccumulatedOrderLine", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccumulatedOrders_count(ctx context.Context, field graphql.CollectedField, obj *model.AccumulatedOrders) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AccumulatedOrders_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AccumulatedOrders_count(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccumulatedOrders",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BurgerDay_id(ctx context.Context, field graphql.CollectedField, obj *model.BurgerDay) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_BurgerDay_id(ctx, field)
 	if err != nil {
@@ -753,6 +1112,8 @@ func (ec *executionContext) fieldContext_BurgerDay_author(ctx context.Context, f
 				return ec.fieldContext_User_name(ctx, field)
 			case "email":
 				return ec.fieldContext_User_email(ctx, field)
+			case "phoneNumber":
+				return ec.fieldContext_User_phoneNumber(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -851,8 +1212,142 @@ func (ec *executionContext) fieldContext_BurgerDay_orders(ctx context.Context, f
 				return ec.fieldContext_Order_user(ctx, field)
 			case "specialRequest":
 				return ec.fieldContext_Order_specialRequest(ctx, field)
+			case "paid":
+				return ec.fieldContext_Order_paid(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BurgerDay_closed(ctx context.Context, field graphql.CollectedField, obj *model.BurgerDay) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BurgerDay_closed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Closed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BurgerDay_closed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BurgerDay",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BurgerDay_estimatedTime(ctx context.Context, field graphql.CollectedField, obj *model.BurgerDay) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BurgerDay_estimatedTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EstimatedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BurgerDay_estimatedTime(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BurgerDay",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BurgerDay_price(ctx context.Context, field graphql.CollectedField, obj *model.BurgerDay) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BurgerDay_price(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Price, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BurgerDay_price(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BurgerDay",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1043,6 +1538,8 @@ func (ec *executionContext) fieldContext_Consumer_user(ctx context.Context, fiel
 				return ec.fieldContext_User_name(ctx, field)
 			case "email":
 				return ec.fieldContext_User_email(ctx, field)
+			case "phoneNumber":
+				return ec.fieldContext_User_phoneNumber(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1185,6 +1682,8 @@ func (ec *executionContext) fieldContext_Mutation_orderBurger(ctx context.Contex
 				return ec.fieldContext_Order_user(ctx, field)
 			case "specialRequest":
 				return ec.fieldContext_Order_specialRequest(ctx, field)
+			case "paid":
+				return ec.fieldContext_Order_paid(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -1250,6 +1749,12 @@ func (ec *executionContext) fieldContext_Mutation_start_burger_day(ctx context.C
 				return ec.fieldContext_BurgerDay_date(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "closed":
+				return ec.fieldContext_BurgerDay_closed(ctx, field)
+			case "estimatedTime":
+				return ec.fieldContext_BurgerDay_estimatedTime(ctx, field)
+			case "price":
+				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BurgerDay", field.Name)
 		},
@@ -1313,6 +1818,8 @@ func (ec *executionContext) fieldContext_Mutation_create_user(ctx context.Contex
 				return ec.fieldContext_User_name(ctx, field)
 			case "email":
 				return ec.fieldContext_User_email(ctx, field)
+			case "phoneNumber":
+				return ec.fieldContext_User_phoneNumber(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1325,6 +1832,73 @@ func (ec *executionContext) fieldContext_Mutation_create_user(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_create_user_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_pay_order(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_pay_order(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PayOrder(rctx, fc.Args["order_id"].(string), fc.Args["user_id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Order)
+	fc.Result = res
+	return ec.marshalNOrder2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_pay_order(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Order_id(ctx, field)
+			case "burgerDay":
+				return ec.fieldContext_Order_burgerDay(ctx, field)
+			case "user":
+				return ec.fieldContext_Order_user(ctx, field)
+			case "specialRequest":
+				return ec.fieldContext_Order_specialRequest(ctx, field)
+			case "paid":
+				return ec.fieldContext_Order_paid(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_pay_order_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -1422,6 +1996,12 @@ func (ec *executionContext) fieldContext_Order_burgerDay(ctx context.Context, fi
 				return ec.fieldContext_BurgerDay_date(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "closed":
+				return ec.fieldContext_BurgerDay_closed(ctx, field)
+			case "estimatedTime":
+				return ec.fieldContext_BurgerDay_estimatedTime(ctx, field)
+			case "price":
+				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BurgerDay", field.Name)
 		},
@@ -1474,6 +2054,8 @@ func (ec *executionContext) fieldContext_Order_user(ctx context.Context, field g
 				return ec.fieldContext_User_name(ctx, field)
 			case "email":
 				return ec.fieldContext_User_email(ctx, field)
+			case "phoneNumber":
+				return ec.fieldContext_User_phoneNumber(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1525,6 +2107,50 @@ func (ec *executionContext) fieldContext_Order_specialRequest(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Order_paid(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Order_paid(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Paid, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Order_paid(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_todays_burgers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_todays_burgers(ctx, field)
 	if err != nil {
@@ -1569,6 +2195,12 @@ func (ec *executionContext) fieldContext_Query_todays_burgers(ctx context.Contex
 				return ec.fieldContext_BurgerDay_date(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "closed":
+				return ec.fieldContext_BurgerDay_closed(ctx, field)
+			case "estimatedTime":
+				return ec.fieldContext_BurgerDay_estimatedTime(ctx, field)
+			case "price":
+				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BurgerDay", field.Name)
 		},
@@ -1673,6 +2305,8 @@ func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field 
 				return ec.fieldContext_User_name(ctx, field)
 			case "email":
 				return ec.fieldContext_User_email(ctx, field)
+			case "phoneNumber":
+				return ec.fieldContext_User_phoneNumber(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1722,6 +2356,8 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 				return ec.fieldContext_User_name(ctx, field)
 			case "email":
 				return ec.fieldContext_User_email(ctx, field)
+			case "phoneNumber":
+				return ec.fieldContext_User_phoneNumber(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1787,6 +2423,12 @@ func (ec *executionContext) fieldContext_Query_burger_days(ctx context.Context, 
 				return ec.fieldContext_BurgerDay_date(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "closed":
+				return ec.fieldContext_BurgerDay_closed(ctx, field)
+			case "estimatedTime":
+				return ec.fieldContext_BurgerDay_estimatedTime(ctx, field)
+			case "price":
+				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BurgerDay", field.Name)
 		},
@@ -1838,6 +2480,12 @@ func (ec *executionContext) fieldContext_Query_burger_day(ctx context.Context, f
 				return ec.fieldContext_BurgerDay_date(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "closed":
+				return ec.fieldContext_BurgerDay_closed(ctx, field)
+			case "estimatedTime":
+				return ec.fieldContext_BurgerDay_estimatedTime(ctx, field)
+			case "price":
+				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BurgerDay", field.Name)
 		},
@@ -1903,6 +2551,8 @@ func (ec *executionContext) fieldContext_Query_orders(ctx context.Context, field
 				return ec.fieldContext_Order_user(ctx, field)
 			case "specialRequest":
 				return ec.fieldContext_Order_specialRequest(ctx, field)
+			case "paid":
+				return ec.fieldContext_Order_paid(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -1954,6 +2604,8 @@ func (ec *executionContext) fieldContext_Query_order(ctx context.Context, field 
 				return ec.fieldContext_Order_user(ctx, field)
 			case "specialRequest":
 				return ec.fieldContext_Order_specialRequest(ctx, field)
+			case "paid":
+				return ec.fieldContext_Order_paid(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -1968,6 +2620,55 @@ func (ec *executionContext) fieldContext_Query_order(ctx context.Context, field 
 	if fc.Args, err = ec.field_Query_order_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_accumualte_order(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_accumualte_order(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AccumualteOrder(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.AccumulatedOrders)
+	fc.Result = res
+	return ec.marshalOAccumulatedOrders2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐAccumulatedOrders(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_accumualte_order(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AccumulatedOrders_id(ctx, field)
+			case "to_order":
+				return ec.fieldContext_AccumulatedOrders_to_order(ctx, field)
+			case "count":
+				return ec.fieldContext_AccumulatedOrders_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccumulatedOrders", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -2221,6 +2922,47 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 }
 
 func (ec *executionContext) fieldContext_User_email(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_phoneNumber(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_phoneNumber(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PhoneNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_phoneNumber(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
@@ -4014,6 +4756,99 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** object.gotpl ****************************
 
+var accumulatedOrderLineImplementors = []string{"AccumulatedOrderLine"}
+
+func (ec *executionContext) _AccumulatedOrderLine(ctx context.Context, sel ast.SelectionSet, obj *model.AccumulatedOrderLine) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accumulatedOrderLineImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccumulatedOrderLine")
+		case "amount":
+			out.Values[i] = ec._AccumulatedOrderLine_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "specialRequest":
+			out.Values[i] = ec._AccumulatedOrderLine_specialRequest(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var accumulatedOrdersImplementors = []string{"AccumulatedOrders"}
+
+func (ec *executionContext) _AccumulatedOrders(ctx context.Context, sel ast.SelectionSet, obj *model.AccumulatedOrders) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accumulatedOrdersImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccumulatedOrders")
+		case "id":
+			out.Values[i] = ec._AccumulatedOrders_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "to_order":
+			out.Values[i] = ec._AccumulatedOrders_to_order(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._AccumulatedOrders_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var burgerDayImplementors = []string{"BurgerDay"}
 
 func (ec *executionContext) _BurgerDay(ctx context.Context, sel ast.SelectionSet, obj *model.BurgerDay) graphql.Marshaler {
@@ -4107,6 +4942,21 @@ func (ec *executionContext) _BurgerDay(ctx context.Context, sel ast.SelectionSet
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "closed":
+			out.Values[i] = ec._BurgerDay_closed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "estimatedTime":
+			out.Values[i] = ec._BurgerDay_estimatedTime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "price":
+			out.Values[i] = ec._BurgerDay_price(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4268,6 +5118,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "pay_order":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_pay_order(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4381,6 +5238,11 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "specialRequest":
 			out.Values[i] = ec._Order_specialRequest(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "paid":
+			out.Values[i] = ec._Order_paid(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
@@ -4590,6 +5452,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "accumualte_order":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_accumualte_order(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -4647,6 +5528,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "phoneNumber":
+			out.Values[i] = ec._User_phoneNumber(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4996,6 +5879,60 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) marshalNAccumulatedOrderLine2ᚕᚖgraphqlᚑgoᚋgraphᚋmodelᚐAccumulatedOrderLineᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.AccumulatedOrderLine) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAccumulatedOrderLine2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐAccumulatedOrderLine(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAccumulatedOrderLine2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐAccumulatedOrderLine(ctx context.Context, sel ast.SelectionSet, v *model.AccumulatedOrderLine) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AccumulatedOrderLine(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -5135,6 +6072,21 @@ func (ec *executionContext) marshalNConsumer2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐC
 		return graphql.Null
 	}
 	return ec._Consumer(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
@@ -5620,6 +6572,13 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalOAccumulatedOrders2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐAccumulatedOrders(ctx context.Context, sel ast.SelectionSet, v *model.AccumulatedOrders) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AccumulatedOrders(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {

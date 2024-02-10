@@ -17,6 +17,7 @@ type User {
     id: ID!
     name: String!
     email: String!
+    phoneNumber: String
 }
 
 type BurgerDay {
@@ -24,6 +25,9 @@ type BurgerDay {
     author: User!
     date: String!
     orders: [Order!]!
+    closed: Boolean!
+    estimatedTime: String!
+    price: Float!
 }
 
 type Order {
@@ -31,6 +35,7 @@ type Order {
     burgerDay: BurgerDay!
     user: User!
     specialRequest: [SpecialOrders!]!
+    paid: Boolean!
 }
 
 type Query {
@@ -42,6 +47,8 @@ type Mutation {
     orderBurger(user_id: ID!, burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
     start_burger_day(author_id: ID!): BurgerDay!
     create_user(name: String!, email: String!): User!
+    pay_order(order_id: ID!, user_id: ID!): Order!
+
 }
 
 

@@ -8,6 +8,17 @@ import (
 	"strconv"
 )
 
+type AccumulatedOrderLine struct {
+	Amount         int             `json:"amount"`
+	SpecialRequest []SpecialOrders `json:"specialRequest"`
+}
+
+type AccumulatedOrders struct {
+	ID      string                  `json:"id"`
+	ToOrder []*AccumulatedOrderLine `json:"to_order"`
+	Count   int                     `json:"count"`
+}
+
 type BurgerStats struct {
 	TotalOrders     int         `json:"totalOrders"`
 	TotalBurgerDays int         `json:"totalBurgerDays"`
@@ -27,9 +38,10 @@ type Query struct {
 }
 
 type User struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Email       string  `json:"email"`
+	PhoneNumber *string `json:"phoneNumber,omitempty"`
 }
 
 type SpecialOrders string
