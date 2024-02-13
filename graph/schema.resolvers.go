@@ -7,6 +7,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"graphql-go/core/stats"
 	"graphql-go/graph/model"
 	"graphql-go/persistence"
 
@@ -37,31 +38,18 @@ func (r *burgerDayResolver) Orders(ctx context.Context, obj *model.BurgerDay) ([
 	return persistence.OrdersToModels(orders), nil
 }
 
-// OrderBurger is the resolver for the orderBurger field.
-func (r *mutationResolver) OrderBurger(ctx context.Context, userID string, burgerDayID string, specialRequest []model.SpecialOrders) (*model.Order, error) {
-	order := &persistence.Order{
-		ID:             uuid.New().String(),
-		UserId:         userID,
-		BurgerDayId:    burgerDayID,
-		SpecialRequest: persistence.SpecialOrdersToStrings(specialRequest),
-	}
+// CloseBurgerDay is the resolver for the close_burger_day field.
+func (r *mutationResolver) CloseBurgerDay(ctx context.Context, burgerDayID string) (*model.BurgerDay, error) {
+	burgerDay := &persistence.BurgerDay{ID: burgerDayID}
+	res := r.DB.First(burgerDay)
 
-	res := r.DB.Create(order)
 	if res.Error != nil {
 		return nil, res.Error
 	}
 
-	return persistence.OrderToModel(order), nil
-}
+	burgerDay.Closed = true
+	res = r.DB.Save(burgerDay)
 
-// StartBurgerDay is the resolver for the start_burger_day field.
-func (r *mutationResolver) StartBurgerDay(ctx context.Context, authorID string) (*model.BurgerDay, error) {
-	burgerDay := &persistence.BurgerDay{
-		ID:       uuid.New().String(),
-		AuthorId: authorID,
-	}
-
-	res := r.DB.Create(burgerDay)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -85,6 +73,28 @@ func (r *mutationResolver) CreateUser(ctx context.Context, name string, email st
 	return persistence.UserToModel(user), nil
 }
 
+// OrderBurger is the resolver for the orderBurger field.
+func (r *mutationResolver) OrderBurger(ctx context.Context, userID string, burgerDayID string, specialRequest []model.SpecialOrders) (*model.Order, error) {
+	order := &persistence.Order{
+		ID:             uuid.New().String(),
+		UserId:         userID,
+		BurgerDayId:    burgerDayID,
+		SpecialRequest: persistence.SpecialOrdersToStrings(specialRequest),
+	}
+	burgerDay := &persistence.BurgerDay{ID: burgerDayID}
+	r.DB.First(burgerDay)
+	if burgerDay.Closed {
+		return nil, stats.ErrBurgerDayClosed{}
+	}
+
+	res := r.DB.Create(order)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.OrderToModel(order), nil
+}
+
 // PayOrder is the resolver for the pay_order field.
 func (r *mutationResolver) PayOrder(ctx context.Context, orderID string, userID string) (*model.Order, error) {
 	order := &persistence.Order{ID: orderID}
@@ -95,6 +105,70 @@ func (r *mutationResolver) PayOrder(ctx context.Context, orderID string, userID 
 	order.Paid = true
 	res = r.DB.Save(order)
 	return persistence.OrderToModel(order), res.Error
+}
+
+// StartBurgerDay is the resolver for the start_burger_day field.
+func (r *mutationResolver) StartBurgerDay(ctx context.Context, authorID string) (*model.BurgerDay, error) {
+	burgerDay := &persistence.BurgerDay{
+		ID:       uuid.New().String(),
+		AuthorId: authorID,
+	}
+
+	res := r.DB.Create(burgerDay)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.BurgerDayToModel(burgerDay), nil
+}
+
+// UpdateBurgerDay is the resolver for the update_burger_day field.
+func (r *mutationResolver) UpdateBurgerDay(ctx context.Context, burgerDayID string, estimatedTime *string, price *float64) (*model.BurgerDay, error) {
+	burgerDay := &persistence.BurgerDay{ID: burgerDayID}
+	res := r.DB.First(burgerDay)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	if estimatedTime != nil {
+		burgerDay.EstimatedTime = *estimatedTime
+	}
+	if price != nil {
+		burgerDay.Price = *price
+	}
+
+	res = r.DB.Save(burgerDay)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.BurgerDayToModel(burgerDay), nil
+}
+
+// UpdateUser is the resolver for the update_user field.
+func (r *mutationResolver) UpdateUser(ctx context.Context, userID string, name *string, email *string, phoneNumber *string) (*model.User, error) {
+	user := &persistence.User{ID: userID}
+	res := r.DB.First(user)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	if name != nil {
+		user.Name = *name
+	}
+	if email != nil {
+		user.Email = *email
+	}
+	if phoneNumber != nil {
+		user.PhoneNumber = *phoneNumber
+	}
+
+	res = r.DB.Save(user)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.UserToModel(user), nil
 }
 
 // BurgerDay is the resolver for the burgerDay field.
@@ -119,6 +193,67 @@ func (r *orderResolver) User(ctx context.Context, obj *model.Order) (*model.User
 	return persistence.UserToModel(user), nil
 }
 
+// AccumualteOrder is the resolver for the accumualte_order field.
+func (r *queryResolver) AccumualteOrder(ctx context.Context) (*model.AccumulatedOrders, error) {
+	panic(fmt.Errorf("not implemented: AccumualteOrder - accumualte_order"))
+}
+
+// BurgerDay is the resolver for the burger_day field.
+func (r *queryResolver) BurgerDay(ctx context.Context, id string) (*model.BurgerDay, error) {
+	burgerDay := persistence.BurgerDay{}
+	res := r.DB.First(&burgerDay, id)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.BurgerDayToModel(&burgerDay), nil
+}
+
+// BurgerDays is the resolver for the burger_days field.
+func (r *queryResolver) BurgerDays(ctx context.Context) ([]*model.BurgerDay, error) {
+	var burgerDays []*persistence.BurgerDay
+	res := r.DB.Find(&burgerDays)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.BurgerDaysToModels(burgerDays), nil
+}
+
+// BurgerStats is the resolver for the burgerStats field.
+func (r *queryResolver) BurgerStats(ctx context.Context) (*model.BurgerStats, error) {
+	res, error := stats.CalculateBurgerStats(r.DB)
+
+	return stats.BurgerStatsToModel(res), error
+}
+
+// Order is the resolver for the order field.
+func (r *queryResolver) Order(ctx context.Context, id string) (*model.Order, error) {
+	order := persistence.Order{}
+	res := r.DB.First(&order, id)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.OrderToModel(&order), nil
+}
+
+// Orders is the resolver for the orders field.
+func (r *queryResolver) Orders(ctx context.Context) ([]*model.Order, error) {
+	var orders []*persistence.Order
+
+	res := r.DB.Find(&orders)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.OrdersToModels(orders), nil
+}
+
 // TodaysBurgers is the resolver for the todays_burgers field.
 func (r *queryResolver) TodaysBurgers(ctx context.Context) (*model.BurgerDay, error) {
 	burgerDay := &persistence.BurgerDay{}
@@ -128,6 +263,30 @@ func (r *queryResolver) TodaysBurgers(ctx context.Context) (*model.BurgerDay, er
 	}
 
 	return persistence.BurgerDayToModel(burgerDay), nil
+}
+
+// User is the resolver for the user field.
+func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
+	user := persistence.User{}
+	res := r.DB.First(&user, id)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.UserToModel(&user), nil
+}
+
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+	var users []*persistence.User
+	res := r.DB.Find(&users)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.UsersToModels(users), nil
 }
 
 // BurgerDay returns BurgerDayResolver implementation.
@@ -146,4 +305,3 @@ type burgerDayResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type orderResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-

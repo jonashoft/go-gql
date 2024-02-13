@@ -1,54 +1,82 @@
 # GraphQL schema example
-#
 # https://gqlgen.com/getting-started/
 
 enum SpecialOrders  {
+    chili_mayo,
+    garlic_mayo,
+    gluten_free_bun,
     no_bacon,
     no_cheese,
     no_salat,
-    garlic_mayo,
-    chili_mayo,
-    gluten_free_bun,
     vegetarian_patty
-
-
 }
-type User {
+
+type AccumulatedOrderLine {
+    amount: Int!
+    specialRequest: [SpecialOrders!]!
+}
+
+type AccumulatedOrders {
+    count: Int!
     id: ID!
-    name: String!
-    email: String!
-    phoneNumber: String
+    to_order: [AccumulatedOrderLine!]!
 }
 
 type BurgerDay {
-    id: ID!
     author: User!
-    date: String!
-    orders: [Order!]!
     closed: Boolean!
+    date: String!
     estimatedTime: String!
+    id: ID!
+    orders: [Order!]!
     price: Float!
 }
 
-type Order {
-    id: ID!
-    burgerDay: BurgerDay!
+type BurgerStats {
+    topConsumers: [Consumer!]!
+    totalBurgerDays: Int!
+    totalOrders: Int!
+}
+
+type Consumer {
+    totalBurgerDays: Int!
+    totalOrders: Int!
     user: User!
-    specialRequest: [SpecialOrders!]!
+}
+
+type Mutation {
+    close_burger_day(burgerDayId: ID!): BurgerDay!
+    create_user(name: String!, email: String!): User!
+    orderBurger(user_id: ID!, burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
+    pay_order(order_id: ID!, user_id: ID!): Order!
+    start_burger_day(author_id: ID!): BurgerDay!
+    update_burger_day(burgerDayId: ID!, estimatedTime: String, price: Float): BurgerDay!
+    update_user(user_id: ID!, name: String, email: String, phoneNumber: String): User!
+}
+
+type Order {
+    burgerDay: BurgerDay!
+    id: ID!
     paid: Boolean!
+    specialRequest: [SpecialOrders!]!
+    user: User!
 }
 
 type Query {
+    accumualte_order: AccumulatedOrders
+    burger_day(id: ID!): BurgerDay
+    burger_days: [BurgerDay!]!
+    burgerStats: BurgerStats!
+    order(id: ID!): Order
+    orders: [Order!]!
     todays_burgers: BurgerDay
+    user(id: ID!): User
+    users: [User!]!
 }
 
-
-type Mutation {
-    orderBurger(user_id: ID!, burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
-    start_burger_day(author_id: ID!): BurgerDay!
-    create_user(name: String!, email: String!): User!
-    pay_order(order_id: ID!, user_id: ID!): Order!
-
+type User {
+    email: String!
+    id: ID!
+    name: String!
+    phoneNumber: String
 }
-
-
