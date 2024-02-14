@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"graphql-go/graph/model"
 	"graphql-go/persistence"
 
