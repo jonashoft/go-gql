@@ -36,6 +36,25 @@ func nonceMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Nonce")
+
+		// If the request is an OPTIONS request, return immediately with a 200 response
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Continue processing the request
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -48,7 +67,7 @@ func main() {
 	}}))
 
 	// Wrap the /query handler with nonceMiddleware to protect your GraphQL API
-	http.Handle("/query", nonceMiddleware(srv))
+	http.Handle("/query", corsMiddleware(nonceMiddleware(srv)))
 
 	// Optionally, protect the GraphQL playground with the nonceMiddleware as well
 	// This means accessing the playground will also require a valid nonce
