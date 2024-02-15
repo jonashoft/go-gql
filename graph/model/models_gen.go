@@ -14,21 +14,21 @@ type AccumulatedOrderLine struct {
 }
 
 type AccumulatedOrders struct {
+	Count   int                     `json:"count"`
 	ID      string                  `json:"id"`
 	ToOrder []*AccumulatedOrderLine `json:"to_order"`
-	Count   int                     `json:"count"`
 }
 
 type BurgerStats struct {
-	TotalOrders     int         `json:"totalOrders"`
-	TotalBurgerDays int         `json:"totalBurgerDays"`
 	TopConsumers    []*Consumer `json:"topConsumers"`
+	TotalBurgerDays int         `json:"totalBurgerDays"`
+	TotalOrders     int         `json:"totalOrders"`
 }
 
 type Consumer struct {
-	User            *User `json:"user"`
-	TotalOrders     int   `json:"totalOrders"`
 	TotalBurgerDays int   `json:"totalBurgerDays"`
+	TotalOrders     int   `json:"totalOrders"`
+	User            *User `json:"user"`
 }
 
 type Mutation struct {
@@ -38,37 +38,37 @@ type Query struct {
 }
 
 type User struct {
+	Email       string  `json:"email"`
 	ID          string  `json:"id"`
 	Name        string  `json:"name"`
-	Email       string  `json:"email"`
 	PhoneNumber *string `json:"phoneNumber,omitempty"`
 }
 
 type SpecialOrders string
 
 const (
+	SpecialOrdersChiliMayo       SpecialOrders = "chili_mayo"
+	SpecialOrdersGarlicMayo      SpecialOrders = "garlic_mayo"
+	SpecialOrdersGlutenFreeBun   SpecialOrders = "gluten_free_bun"
 	SpecialOrdersNoBacon         SpecialOrders = "no_bacon"
 	SpecialOrdersNoCheese        SpecialOrders = "no_cheese"
 	SpecialOrdersNoSalat         SpecialOrders = "no_salat"
-	SpecialOrdersGarlicMayo      SpecialOrders = "garlic_mayo"
-	SpecialOrdersChiliMayo       SpecialOrders = "chili_mayo"
-	SpecialOrdersGlutenFreeBun   SpecialOrders = "gluten_free_bun"
 	SpecialOrdersVegetarianPatty SpecialOrders = "vegetarian_patty"
 )
 
 var AllSpecialOrders = []SpecialOrders{
+	SpecialOrdersChiliMayo,
+	SpecialOrdersGarlicMayo,
+	SpecialOrdersGlutenFreeBun,
 	SpecialOrdersNoBacon,
 	SpecialOrdersNoCheese,
 	SpecialOrdersNoSalat,
-	SpecialOrdersGarlicMayo,
-	SpecialOrdersChiliMayo,
-	SpecialOrdersGlutenFreeBun,
 	SpecialOrdersVegetarianPatty,
 }
 
 func (e SpecialOrders) IsValid() bool {
 	switch e {
-	case SpecialOrdersNoBacon, SpecialOrdersNoCheese, SpecialOrdersNoSalat, SpecialOrdersGarlicMayo, SpecialOrdersChiliMayo, SpecialOrdersGlutenFreeBun, SpecialOrdersVegetarianPatty:
+	case SpecialOrdersChiliMayo, SpecialOrdersGarlicMayo, SpecialOrdersGlutenFreeBun, SpecialOrdersNoBacon, SpecialOrdersNoCheese, SpecialOrdersNoSalat, SpecialOrdersVegetarianPatty:
 		return true
 	}
 	return false

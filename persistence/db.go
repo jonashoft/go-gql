@@ -38,9 +38,10 @@ func EnsureMigrated(db *gorm.DB) {
 
 func UserToModel(user *User) *model.User {
 	return &model.User{
-		ID:    user.ID,
-		Name:  user.Name,
-		Email: user.Email,
+		ID:          user.ID,
+		Name:        user.Name,
+		Email:       user.Email,
+		PhoneNumber: &user.PhoneNumber,
 	}
 }
 func UsersToModels(users []*User) []*model.User {
@@ -56,6 +57,8 @@ func BurgerDayToModel(burgerDay *BurgerDay) *model.BurgerDay {
 		ID:       burgerDay.ID,
 		Date:     burgerDay.Date,
 		AuthorId: burgerDay.AuthorId,
+		Price:    burgerDay.Price,
+		Closed:   burgerDay.Closed,
 	}
 }
 
@@ -140,6 +143,6 @@ type Order struct {
 	BurgerDay      *BurgerDay `gorm:"foreignKey:BurgerDayId" json:"BurgerDay"`
 	UserId         string     `json:"userId"`
 	User           *User      `gorm:"foreignKey:UserId" json:"user"`
-	Paid          bool       `gorm:"default:false" json:"paid"`
+	Paid           bool       `gorm:"default:false" json:"paid"`
 	SpecialRequest []string   `gorm:"type:text[]" json:"specialRequest"`
 }
