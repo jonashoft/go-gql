@@ -6,13 +6,11 @@ package graph
 
 import (
 	"context"
-
+	"fmt"
+	"github.com/google/uuid"
 	"graphql-go/core/stats"
-
 	"graphql-go/graph/model"
 	"graphql-go/persistence"
-
-	"github.com/google/uuid"
 )
 
 // Author is the resolver for the author field.
