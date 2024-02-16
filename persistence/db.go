@@ -13,7 +13,7 @@ import (
 
 func ConnectGORM() *gorm.DB {
 	// Check if the DB_URL environment variable is set.
-	dsn := os.Getenv("DB_URL")
+	dsn := os.Getenv("POSTGRESQLCONNSTR_AZURE_POSTGRESQL_CONNECTIONSTRING")
 	if dsn == "" {
 		// Use hardcoded values for local development.
 		dsn = "host=localhost user=postgres password=changeme dbname=gogql"
