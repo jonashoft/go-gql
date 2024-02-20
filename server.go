@@ -48,7 +48,7 @@ func authMiddleware(next http.Handler) http.Handler {
 
 			// Return the secret key (this should be more secure in production)
 			// Replace "your_secret_key" with your actual secret key
-			return []byte("your_secret_key"), nil
+			return []byte(os.Getenv("JWT_SECRET")), nil
 		})
 
 		if err != nil {
