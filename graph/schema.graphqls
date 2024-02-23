@@ -47,9 +47,9 @@ type Consumer {
 type Mutation {
     close_burger_day(burgerDayId: ID!): BurgerDay!
     create_user(name: String!, email: String!): User!
-    orderBurger(user_id: ID!, burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
+    orderBurger( burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
     pay_order(order_id: ID!, user_id: ID!): Order!
-    start_burger_day(author_id: ID!): BurgerDay!
+    start_burger_day: BurgerDay!
     update_burger_day(burgerDayId: ID!, estimatedTime: String, price: Float): BurgerDay!
     update_user(user_id: ID!, name: String, email: String, phoneNumber: String): User!
 }
@@ -72,6 +72,7 @@ type Query {
     todays_burgers: BurgerDay
     user(id: ID!): User
     users: [User!]!
+    me: User
 }
 
 type User {

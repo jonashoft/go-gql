@@ -1,16 +1,40 @@
 package persistence
 
 import (
+	"database/sql/driver"
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"graphql-go/graph/model"
 	"os"
+	"strings"
 )
 
 // Assuming the model structs are as defined in your question.
 // Note: For GORM, you need to adjust struct tags slightly to match GORM's expectations.
 
+type StringArray []string
+
+func (a StringArray) Value() (driver.Value, error) {
+	if len(a) == 0 {
+		return "{}", nil
+	}
+
+	str := fmt.Sprintf("{%s}", strings.Join(a, ","))
+	return str, nil
+}
+
+func (a *StringArray) Scan(src interface{}) error {
+	str, ok := src.(string)
+	if !ok {
+		return fmt.Errorf("Failed to unmarshal StringArray: %s", src)
+	}
+
+	str = strings.Trim(str, "{}")
+	*a = strings.Split(str, ",")
+
+	return nil
+}
 func ConnectGORM() *gorm.DB {
 	// Check if the DB_URL environment variable is set.
 	dsn := os.Getenv("DB_URL")
@@ -88,7 +112,7 @@ func StringsToSpecialOrders(strings []string) ([]model.SpecialOrders, error) {
 	return specialOrders, nil
 }
 
-func SpecialOrdersToStrings(specialOrders []model.SpecialOrders) []string {
+func SpecialOrdersToStrings(specialOrders []model.SpecialOrders) StringArray {
 	stringsToFormat := make([]string, len(specialOrders))
 	for i, order := range specialOrders {
 		stringsToFormat[i] = string(order)
@@ -138,11 +162,11 @@ type User struct {
 }
 
 type Order struct {
-	ID             string     `gorm:"primaryKey" json:"id"`
-	BurgerDayId    string     `json:"burgerDayId"`
-	BurgerDay      *BurgerDay `gorm:"foreignKey:BurgerDayId" json:"BurgerDay"`
-	UserId         string     `json:"userId"`
-	User           *User      `gorm:"foreignKey:UserId" json:"user"`
-	Paid           bool       `gorm:"default:false" json:"paid"`
-	SpecialRequest []string   `gorm:"type:text[]" json:"specialRequest"`
+	ID             string      `gorm:"primaryKey" json:"id"`
+	BurgerDayId    string      `json:"burgerDayId"`
+	BurgerDay      *BurgerDay  `gorm:"foreignKey:BurgerDayId" json:"BurgerDay"`
+	UserId         string      `json:"userId"`
+	User           *User       `gorm:"foreignKey:UserId" json:"user"`
+	Paid           bool        `gorm:"default:false" json:"paid"`
+	SpecialRequest StringArray `gorm:"type:text[]" json:"specialRequest"`
 }
