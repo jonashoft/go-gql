@@ -6,11 +6,14 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"graphql-go/core/stats"
 	"graphql-go/graph/model"
 	"graphql-go/persistence"
+	"time"
 )
 
 // Author is the resolver for the author field.
@@ -108,9 +111,12 @@ func (r *mutationResolver) PayOrder(ctx context.Context, orderID string, userID 
 
 // StartBurgerDay is the resolver for the start_burger_day field.
 func (r *mutationResolver) StartBurgerDay(ctx context.Context, authorID string) (*model.BurgerDay, error) {
+	currentDateString := time.Now().Format("2006-01-02") // Format the date as a string in the format "YYYY-MM-DD"
+
 	burgerDay := &persistence.BurgerDay{
 		ID:       uuid.New().String(),
 		AuthorId: authorID,
+		Date:     currentDateString, // Set the date to the current date
 	}
 
 	res := r.DB.Create(burgerDay)
@@ -255,9 +261,13 @@ func (r *queryResolver) Orders(ctx context.Context) ([]*model.Order, error) {
 
 // TodaysBurgers is the resolver for the todays_burgers field.
 func (r *queryResolver) TodaysBurgers(ctx context.Context) (*model.BurgerDay, error) {
+	currentDateString := time.Now().Format("2006-01-02") // Format the date as a string in the format "YYYY-MM-DD"
 	burgerDay := &persistence.BurgerDay{}
-	res := r.DB.Last(burgerDay)
+	res := r.DB.Where("date = ?", currentDateString).First(burgerDay)
 	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, nil // Return nil if no record is found for today
+		}
 		return nil, res.Error
 	}
 
