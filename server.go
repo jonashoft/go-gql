@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 	"graphql-go/auth"
 	"graphql-go/graph"
@@ -93,21 +94,33 @@ func main() {
 		port = defaultPort
 	}
 
+	gorm := persistence.ConnectGORM()
+
 	// Create your GraphQL server handler
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
-		DB: persistence.ConnectGORM(),
+		DB: gorm,
 	}}))
 
-	// Wrap the /query handler with nonceMiddleware to protect your GraphQL API
-	http.Handle("/query", corsMiddleware(authMiddleware(srv)))
-	http.HandleFunc("/login", auth.HandleLogin)
-	http.HandleFunc("/auth/callback", auth.HandleCallback)
+	// Create a new Chi router
+	router := chi.NewRouter()
+
+	// Use the Chi router methods to handle routes
+	router.Use(corsMiddleware)
+	router.Use(authMiddleware)
+	router.Use(auth.Middleware(gorm))
+	router.Handle("/query", srv)
+
+	authRouter := chi.NewRouter()
+	authRouter.HandleFunc("/login", auth.HandleLogin)
+	authRouter.HandleFunc("/auth/callback", auth.HandleCallback)
+
+	router.Mount("/", authRouter)
 
 	// Optionally, protect the GraphQL playground with the nonceMiddleware as well
 	// This means accessing the playground will also require a valid nonce
 	playgroundHandler := playground.Handler("GraphQL playground", "/query")
-	http.Handle("/", playgroundHandler)
+	router.Handle("/", playgroundHandler)
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }
