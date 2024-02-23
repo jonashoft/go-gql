@@ -109,8 +109,12 @@ func main() {
 	router.Use(authMiddleware)
 	router.Use(auth.Middleware(gorm))
 	router.Handle("/query", srv)
-	router.HandleFunc("/login", auth.HandleLogin)
-	router.HandleFunc("/auth/callback", auth.HandleCallback)
+
+	authRouter := chi.NewRouter()
+	authRouter.HandleFunc("/login", auth.HandleLogin)
+	authRouter.HandleFunc("/auth/callback", auth.HandleCallback)
+
+	router.Mount("/", authRouter)
 
 	// Optionally, protect the GraphQL playground with the nonceMiddleware as well
 	// This means accessing the playground will also require a valid nonce

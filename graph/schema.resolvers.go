@@ -234,9 +234,9 @@ func (r *queryResolver) BurgerDays(ctx context.Context) ([]*model.BurgerDay, err
 
 // BurgerStats is the resolver for the burgerStats field.
 func (r *queryResolver) BurgerStats(ctx context.Context) (*model.BurgerStats, error) {
-	res, error := stats.CalculateBurgerStats(r.DB)
+	res, err := stats.CalculateBurgerStats(r.DB)
 
-	return stats.BurgerStatsToModel(res), error
+	return stats.BurgerStatsToModel(res), err
 }
 
 // Order is the resolver for the order field.
