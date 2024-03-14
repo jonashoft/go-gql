@@ -52,7 +52,7 @@ const (
 	SpecialOrdersGlutenFreeBun   SpecialOrders = "gluten_free_bun"
 	SpecialOrdersNoBacon         SpecialOrders = "no_bacon"
 	SpecialOrdersNoCheese        SpecialOrders = "no_cheese"
-	SpecialOrdersNoSalat         SpecialOrders = "no_salat"
+	SpecialOrdersNoSalad         SpecialOrders = "no_salad"
 	SpecialOrdersVegetarianPatty SpecialOrders = "vegetarian_patty"
 )
 
@@ -62,13 +62,13 @@ var AllSpecialOrders = []SpecialOrders{
 	SpecialOrdersGlutenFreeBun,
 	SpecialOrdersNoBacon,
 	SpecialOrdersNoCheese,
-	SpecialOrdersNoSalat,
+	SpecialOrdersNoSalad,
 	SpecialOrdersVegetarianPatty,
 }
 
 func (e SpecialOrders) IsValid() bool {
 	switch e {
-	case SpecialOrdersChiliMayo, SpecialOrdersGarlicMayo, SpecialOrdersGlutenFreeBun, SpecialOrdersNoBacon, SpecialOrdersNoCheese, SpecialOrdersNoSalat, SpecialOrdersVegetarianPatty:
+	case SpecialOrdersChiliMayo, SpecialOrdersGarlicMayo, SpecialOrdersGlutenFreeBun, SpecialOrdersNoBacon, SpecialOrdersNoCheese, SpecialOrdersNoSalad, SpecialOrdersVegetarianPatty:
 		return true
 	}
 	return false

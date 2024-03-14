@@ -79,7 +79,6 @@ func (r *mutationResolver) CreateUser(ctx context.Context, name string, email st
 
 // OrderBurger is the resolver for the orderBurger field.
 func (r *mutationResolver) OrderBurger(ctx context.Context, burgerDayID string, specialRequest []model.SpecialOrders) (*model.Order, error) {
-
 	user := auth.ForContext(ctx)
 	order := &persistence.Order{
 		ID:             uuid.New().String(),

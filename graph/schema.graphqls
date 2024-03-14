@@ -7,7 +7,7 @@ enum SpecialOrders  {
     gluten_free_bun,
     no_bacon,
     no_cheese,
-    no_salat,
+    no_salad,
     vegetarian_patty
 }
 
