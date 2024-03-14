@@ -254,7 +254,8 @@ func (r *queryResolver) Order(ctx context.Context, id string) (*model.Order, err
 func (r *queryResolver) Orders(ctx context.Context) ([]*model.Order, error) {
 	var orders []*persistence.Order
 
-	res := r.DB.Find(&orders)
+  // preload user on order
+	res := r.DB.Find(&orders).Preload("User")
 
 	if res.Error != nil {
 		return nil, res.Error
