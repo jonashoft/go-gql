@@ -193,8 +193,8 @@ func (r *orderResolver) BurgerDay(ctx context.Context, obj *model.Order) (*model
 
 // User is the resolver for the user field.
 func (r *orderResolver) User(ctx context.Context, obj *model.Order) (*model.User, error) {
-	user := &persistence.User{}
-	res := r.DB.First(user, obj.UserId)
+	user := &persistence.User{ID: obj.UserId}
+	res := r.DB.First(user)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -254,8 +254,8 @@ func (r *queryResolver) Order(ctx context.Context, id string) (*model.Order, err
 func (r *queryResolver) Orders(ctx context.Context) ([]*model.Order, error) {
 	var orders []*persistence.Order
 
-  // preload user on order
-	res := r.DB.Find(&orders).Preload("User")
+	// preload user on order
+	res := r.DB.Find(&orders)
 
 	if res.Error != nil {
 		return nil, res.Error
@@ -281,8 +281,8 @@ func (r *queryResolver) TodaysBurgers(ctx context.Context) (*model.BurgerDay, er
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
-	user := persistence.User{}
-	res := r.DB.First(&user, id)
+	user := persistence.User{ID: id}
+	res := r.DB.First(&user)
 
 	if res.Error != nil {
 		return nil, res.Error
