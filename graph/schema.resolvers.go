@@ -12,6 +12,7 @@ import (
 	"graphql-go/core/stats"
 	"graphql-go/graph/model"
 	"graphql-go/persistence"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -202,9 +203,46 @@ func (r *orderResolver) User(ctx context.Context, obj *model.Order) (*model.User
 	return persistence.UserToModel(user), nil
 }
 
-// AccumualteOrder is the resolver for the accumualte_order field.
-func (r *queryResolver) AccumualteOrder(ctx context.Context) (*model.AccumulatedOrders, error) {
-	panic(fmt.Errorf("not implemented: AccumualteOrder - accumualte_order"))
+// AccumulatedOrders is the resolver for the accumulated_orders field.
+func (r *queryResolver) AccumulatedOrders(ctx context.Context) (*model.AccumulatedOrders, error) {
+	bg_day, error := current_burger_day(r.DB)
+
+	if error != nil {
+		return nil, error
+	}
+	if bg_day == nil {
+		return nil, nil
+	}
+	var orders []*persistence.Order
+	if err := r.DB.Where("burger_day_id = ?", bg_day.ID).Find(&orders).Error; err != nil {
+		return nil, err
+	}
+
+	// Map to count unique special order combinations
+	uniqueOrders := make(map[string]int)
+	for _, order := range orders {
+		key := strings.Join(order.SpecialRequest, ",")
+		uniqueOrders[key]++
+	}
+
+	// Convert to AccumulatedOrderLine slice
+	var accumulatedOrderLines []*model.AccumulatedOrderLine
+	for specialReq, count := range uniqueOrders {
+		specialOrders, err := persistence.StringsToSpecialOrders(strings.Split(specialReq, ","))
+		if err != nil {
+			return nil, err
+		}
+		accumulatedOrderLines = append(accumulatedOrderLines, &model.AccumulatedOrderLine{
+			Amount:         count,
+			SpecialRequest: specialOrders,
+		})
+	}
+
+	return &model.AccumulatedOrders{
+		ID:      bg_day.ID,
+		Count:   len(orders),
+		ToOrder: accumulatedOrderLines,
+	}, nil
 }
 
 // BurgerDay is the resolver for the burger_day field.
@@ -325,3 +363,13 @@ type burgerDayResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type orderResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *queryResolver) AccumualteOrder(ctx context.Context) (*model.AccumulatedOrders, error) {
+	panic(fmt.Errorf("not implemented: AccumualteOrder - accumualte_order"))
+}

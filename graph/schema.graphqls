@@ -63,7 +63,7 @@ type Order {
 }
 
 type Query {
-    accumualte_order: AccumulatedOrders
+    accumulated_orders: AccumulatedOrders
     burger_day(id: ID!): BurgerDay
     burger_days: [BurgerDay!]!
     burgerStats: BurgerStats!

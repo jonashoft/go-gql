@@ -103,7 +103,7 @@ func HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// sign a jwt token
-	jwtString, error4 := signToken(dbUser)
+	jwtString, error4 := SignToken(dbUser)
 	if error4 != nil {
 		http.Error(w, "Failed to sign token: "+error4.Error(), http.StatusInternalServerError)
 		return
@@ -115,7 +115,7 @@ func HandleCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, finalRedirectURL, http.StatusFound)
 }
 
-func signToken(user *persistence.User) (string, error) {
+func SignToken(user *persistence.User) (string, error) {
 	// Define the token claims
 	claims := jwt.MapClaims{
 		"sub": user.ID,                               // subject, you can use user's email or any unique identifier

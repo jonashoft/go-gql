@@ -101,16 +101,16 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AccumualteOrder func(childComplexity int) int
-		BurgerDay       func(childComplexity int, id string) int
-		BurgerDays      func(childComplexity int) int
-		BurgerStats     func(childComplexity int) int
-		Me              func(childComplexity int) int
-		Order           func(childComplexity int, id string) int
-		Orders          func(childComplexity int) int
-		TodaysBurgers   func(childComplexity int) int
-		User            func(childComplexity int, id string) int
-		Users           func(childComplexity int) int
+		AccumulatedOrders func(childComplexity int) int
+		BurgerDay         func(childComplexity int, id string) int
+		BurgerDays        func(childComplexity int) int
+		BurgerStats       func(childComplexity int) int
+		Me                func(childComplexity int) int
+		Order             func(childComplexity int, id string) int
+		Orders            func(childComplexity int) int
+		TodaysBurgers     func(childComplexity int) int
+		User              func(childComplexity int, id string) int
+		Users             func(childComplexity int) int
 	}
 
 	User struct {
@@ -141,7 +141,7 @@ type OrderResolver interface {
 	User(ctx context.Context, obj *model.Order) (*model.User, error)
 }
 type QueryResolver interface {
-	AccumualteOrder(ctx context.Context) (*model.AccumulatedOrders, error)
+	AccumulatedOrders(ctx context.Context) (*model.AccumulatedOrders, error)
 	BurgerDay(ctx context.Context, id string) (*model.BurgerDay, error)
 	BurgerDays(ctx context.Context) ([]*model.BurgerDay, error)
 	BurgerStats(ctx context.Context) (*model.BurgerStats, error)
@@ -412,12 +412,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.User(childComplexity), true
 
-	case "Query.accumualte_order":
-		if e.complexity.Query.AccumualteOrder == nil {
+	case "Query.accumulated_orders":
+		if e.complexity.Query.AccumulatedOrders == nil {
 			break
 		}
 
-		return e.complexity.Query.AccumualteOrder(childComplexity), true
+		return e.complexity.Query.AccumulatedOrders(childComplexity), true
 
 	case "Query.burger_day":
 		if e.complexity.Query.BurgerDay == nil {
@@ -2458,8 +2458,8 @@ func (ec *executionContext) fieldContext_Order_user(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_accumualte_order(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_accumualte_order(ctx, field)
+func (ec *executionContext) _Query_accumulated_orders(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_accumulated_orders(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2472,7 +2472,7 @@ func (ec *executionContext) _Query_accumualte_order(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AccumualteOrder(rctx)
+		return ec.resolvers.Query().AccumulatedOrders(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2486,7 +2486,7 @@ func (ec *executionContext) _Query_accumualte_order(ctx context.Context, field g
 	return ec.marshalOAccumulatedOrders2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐAccumulatedOrders(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_accumualte_order(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_accumulated_orders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -5667,7 +5667,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "accumualte_order":
+		case "accumulated_orders":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -5676,7 +5676,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_accumualte_order(ctx, field)
+				res = ec._Query_accumulated_orders(ctx, field)
 				return res
 			}
 
