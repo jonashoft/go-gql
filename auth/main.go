@@ -118,8 +118,8 @@ func HandleCallback(w http.ResponseWriter, r *http.Request) {
 func SignToken(user *persistence.User) (string, error) {
 	// Define the token claims
 	claims := jwt.MapClaims{
-		"sub": user.ID,                               // subject, you can use user's email or any unique identifier
-		"exp": time.Now().Add(time.Hour * 72).Unix(), // token expiration time
+		"sub": user.ID,                                    // subject, you can use user's email or any unique identifier
+		"exp": time.Now().Add(time.Hour * 24 * 60).Unix(), // token expiration time
 	}
 
 	// Create a new token object, specifying signing method and the claims
