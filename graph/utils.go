@@ -4,7 +4,6 @@ import (
 	"errors"
 	"graphql-go/persistence"
 	"time"
-
 	"gorm.io/gorm"
 )
 

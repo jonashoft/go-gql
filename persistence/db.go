@@ -127,6 +127,7 @@ func OrderToModel(order *Order) *model.Order {
 		BurgerDayId:    order.BurgerDayId,
 		UserId:         order.UserId,
 		SpecialRequest: special,
+		Paid:           order.Paid,
 	}
 }
 

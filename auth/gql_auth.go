@@ -49,7 +49,6 @@ func Middleware(db *gorm.DB) func(http.Handler) http.Handler {
 				// Replace "your_secret_key" with your actual secret key
 				return []byte(os.Getenv("JWT_SECRET")), nil
 			})
-
 			if err != nil {
 				http.Error(w, "Invalid token", http.StatusUnauthorized)
 				return

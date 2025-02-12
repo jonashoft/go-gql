@@ -105,9 +105,11 @@ func (r *mutationResolver) OrderBurger(ctx context.Context, burgerDayID string, 
 func (r *mutationResolver) PayOrder(ctx context.Context, orderID string, userID string) (*model.Order, error) {
 	order := &persistence.Order{ID: orderID}
 	res := r.DB.First(order)
+
 	if res.Error != nil {
 		return nil, res.Error
 	}
+
 	order.Paid = true
 	res = r.DB.Save(order)
 	return persistence.OrderToModel(order), res.Error
@@ -183,8 +185,8 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, userID string, name *
 
 // BurgerDay is the resolver for the burgerDay field.
 func (r *orderResolver) BurgerDay(ctx context.Context, obj *model.Order) (*model.BurgerDay, error) {
-	burgerDay := &persistence.BurgerDay{}
-	res := r.DB.First(burgerDay, obj.BurgerDayId)
+	burgerDay := &persistence.BurgerDay{ID: obj.BurgerDayId}
+	res := r.DB.First(burgerDay)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -370,6 +372,21 @@ type queryResolver struct{ *Resolver }
 //   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //     it when you're done.
 //   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *mutationResolver) Login(ctx context.Context, email string) (*string, error) {
+	user := &persistence.User{}
+
+	result := r.DB.Where(persistence.User{Email: email}).Attrs(persistence.User{
+		ID:   uuid.New().String(), // Only set ID if creating a new record
+		Name: "simon",
+	}).FirstOrCreate(user)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	token, err := auth.SignToken(user)
+
+	return &token, err
+}
 func (r *queryResolver) AccumualteOrder(ctx context.Context) (*model.AccumulatedOrders, error) {
 	panic(fmt.Errorf("not implemented: AccumualteOrder - accumualte_order"))
 }
