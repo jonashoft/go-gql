@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	"graphql-go/persistence"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 
 	"crypto/rand"
 	"encoding/base64"
@@ -37,6 +38,32 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 	http.SetCookie(w, &cookie)
 
 	return state
+}
+
+func HandleLoginDev(w http.ResponseWriter, r *http.Request) {
+	db := persistence.ConnectGORM()
+	email := r.URL.Query().Get("email")
+
+	user := &persistence.User{}
+
+	result := db.Where(persistence.User{Email: email}).Attrs(persistence.User{
+		ID:   uuid.New().String(), // Only set ID if creating a new record
+		Name: "simon",
+	}).FirstOrCreate(user)
+
+	if result.Error != nil {
+		w.Write([]byte(result.Error.Error()))
+		return
+	}
+	token, err := SignToken(user)
+
+	if err != nil {
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Write([]byte(token))
+	return
 }
 
 func HandleLogin(w http.ResponseWriter, r *http.Request) {

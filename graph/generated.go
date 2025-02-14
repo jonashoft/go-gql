@@ -89,7 +89,7 @@ type ComplexityRoot struct {
 		PayOrder        func(childComplexity int, orderID string, userID string) int
 		StartBurgerDay  func(childComplexity int) int
 		UpdateBurgerDay func(childComplexity int, burgerDayID string, estimatedTime *string, price *float64) int
-		UpdateUser      func(childComplexity int, userID string, name *string, email *string, phoneNumber *string) int
+		UpdateUser      func(childComplexity int, name *string, email *string, phoneNumber *string) int
 	}
 
 	Order struct {
@@ -133,7 +133,7 @@ type MutationResolver interface {
 	PayOrder(ctx context.Context, orderID string, userID string) (*model.Order, error)
 	StartBurgerDay(ctx context.Context) (*model.BurgerDay, error)
 	UpdateBurgerDay(ctx context.Context, burgerDayID string, estimatedTime *string, price *float64) (*model.BurgerDay, error)
-	UpdateUser(ctx context.Context, userID string, name *string, email *string, phoneNumber *string) (*model.User, error)
+	UpdateUser(ctx context.Context, name *string, email *string, phoneNumber *string) (*model.User, error)
 }
 type OrderResolver interface {
 	BurgerDay(ctx context.Context, obj *model.Order) (*model.BurgerDay, error)
@@ -375,7 +375,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateUser(childComplexity, args["user_id"].(string), args["name"].(*string), args["email"].(*string), args["phoneNumber"].(*string)), true
+		return e.complexity.Mutation.UpdateUser(childComplexity, args["name"].(*string), args["email"].(*string), args["phoneNumber"].(*string)), true
 
 	case "Order.burgerDay":
 		if e.complexity.Order.BurgerDay == nil {
@@ -771,42 +771,33 @@ func (ec *executionContext) field_Mutation_update_burger_day_args(ctx context.Co
 func (ec *executionContext) field_Mutation_update_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["user_id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_id"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+	var arg0 *string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["user_id"] = arg0
+	args["name"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["name"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
 		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["name"] = arg1
+	args["email"] = arg1
 	var arg2 *string
-	if tmp, ok := rawArgs["email"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+	if tmp, ok := rawArgs["phoneNumber"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("phoneNumber"))
 		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["email"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["phoneNumber"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("phoneNumber"))
-		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["phoneNumber"] = arg3
+	args["phoneNumber"] = arg2
 	return args, nil
 }
 
@@ -2161,7 +2152,7 @@ func (ec *executionContext) _Mutation_update_user(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateUser(rctx, fc.Args["user_id"].(string), fc.Args["name"].(*string), fc.Args["email"].(*string), fc.Args["phoneNumber"].(*string))
+		return ec.resolvers.Mutation().UpdateUser(rctx, fc.Args["name"].(*string), fc.Args["email"].(*string), fc.Args["phoneNumber"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

@@ -50,14 +50,23 @@ func main() {
 
 	// Use the Chi router methods to handle routes
 	router.Use(corsMiddleware)
-	router.Use(auth.Middleware(gorm))
-	router.Handle("/query", srv)
+
+	gqlRouter := chi.NewRouter()
+	gqlRouter.Use(auth.Middleware(gorm))
+	gqlRouter.Handle("/", srv)
+
 
 	authRouter := chi.NewRouter()
 	authRouter.HandleFunc("/login", auth.HandleLogin)
 	authRouter.HandleFunc("/auth/callback", auth.HandleCallback)
+	// only use below on localhost
+	if os.Getenv("DEBUG") == "true" {
+		authRouter.HandleFunc("/login-dev", auth.HandleLoginDev)
+	}
 
 	router.Mount("/", authRouter)
+	router.Mount("/query", gqlRouter)
+
 
 	// Optionally, protect the GraphQL playground with the nonceMiddleware as well
 	// This means accessing the playground will also require a valid nonce

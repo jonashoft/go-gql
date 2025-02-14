@@ -25,8 +25,9 @@ func Middleware(db *gorm.DB) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Check for JWT in Authorization header
 			authHeader := r.Header.Get("Authorization")
+
 			if authHeader == "" {
-				next.ServeHTTP(w, r)
+				http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
 				return
 			}
 

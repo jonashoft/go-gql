@@ -7,7 +7,6 @@ package graph
 import (
 	"context"
 	"errors"
-	"fmt"
 	"graphql-go/auth"
 	"graphql-go/core/stats"
 	"graphql-go/graph/model"
@@ -158,8 +157,10 @@ func (r *mutationResolver) UpdateBurgerDay(ctx context.Context, burgerDayID stri
 }
 
 // UpdateUser is the resolver for the update_user field.
-func (r *mutationResolver) UpdateUser(ctx context.Context, userID string, name *string, email *string, phoneNumber *string) (*model.User, error) {
-	user := &persistence.User{ID: userID}
+func (r *mutationResolver) UpdateUser(ctx context.Context, name *string, email *string, phoneNumber *string) (*model.User, error) {
+	userCtx := auth.ForContext(ctx)
+	user := &persistence.User{ID: userCtx.ID}
+
 	res := r.DB.First(user)
 	if res.Error != nil {
 		return nil, res.Error
@@ -290,6 +291,22 @@ func (r *queryResolver) Order(ctx context.Context, id string) (*model.Order, err
 	return persistence.OrderToModel(&order), nil
 }
 
+func (r *mutationResolver) Login(ctx context.Context, email string) (*string, error) {
+	user := &persistence.User{}
+
+	result := r.DB.Where(persistence.User{Email: email}).Attrs(persistence.User{
+		ID:   uuid.New().String(), // Only set ID if creating a new record
+		Name: "simon",
+	}).FirstOrCreate(user)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	token, err := auth.SignToken(user)
+
+	return &token, err
+}
+
 // Orders is the resolver for the orders field.
 func (r *queryResolver) Orders(ctx context.Context) ([]*model.Order, error) {
 	var orders []*persistence.Order
@@ -365,28 +382,3 @@ type burgerDayResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type orderResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *mutationResolver) Login(ctx context.Context, email string) (*string, error) {
-	user := &persistence.User{}
-
-	result := r.DB.Where(persistence.User{Email: email}).Attrs(persistence.User{
-		ID:   uuid.New().String(), // Only set ID if creating a new record
-		Name: "simon",
-	}).FirstOrCreate(user)
-
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	token, err := auth.SignToken(user)
-
-	return &token, err
-}
-func (r *queryResolver) AccumualteOrder(ctx context.Context) (*model.AccumulatedOrders, error) {
-	panic(fmt.Errorf("not implemented: AccumualteOrder - accumualte_order"))
-}
