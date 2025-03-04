@@ -1,15 +1,16 @@
 package main
 
 import (
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/go-chi/chi/v5"
 	"graphql-go/auth"
 	"graphql-go/graph"
 	"graphql-go/persistence"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/go-chi/chi/v5"
 )
 
 const defaultPort = "8080"
@@ -55,7 +56,6 @@ func main() {
 	gqlRouter.Use(auth.Middleware(gorm))
 	gqlRouter.Handle("/", srv)
 
-
 	authRouter := chi.NewRouter()
 	authRouter.HandleFunc("/login", auth.HandleLogin)
 	authRouter.HandleFunc("/auth/callback", auth.HandleCallback)
@@ -66,7 +66,6 @@ func main() {
 
 	router.Mount("/", authRouter)
 	router.Mount("/query", gqlRouter)
-
 
 	// Optionally, protect the GraphQL playground with the nonceMiddleware as well
 	// This means accessing the playground will also require a valid nonce

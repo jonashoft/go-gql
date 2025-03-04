@@ -42,6 +42,16 @@ func (r *burgerDayResolver) Orders(ctx context.Context, obj *model.BurgerDay) ([
 	return persistence.OrdersToModels(orders), nil
 }
 
+// OrdersCount is the resolver for the ordersCount field.
+func (r *burgerDayResolver) OrdersCount(ctx context.Context, obj *model.BurgerDay) (int, error) {
+	var count int64
+	err := r.DB.Model(&persistence.Order{}).Where("burger_day_id = ?", obj.ID).Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
 // CloseBurgerDay is the resolver for the close_burger_day field.
 func (r *mutationResolver) CloseBurgerDay(ctx context.Context, burgerDayID string) (*model.BurgerDay, error) {
 	burgerDay := &persistence.BurgerDay{ID: burgerDayID}
@@ -184,6 +194,36 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, name *string, email *
 	return persistence.UserToModel(user), nil
 }
 
+// DeleteBurgerDay is the resolver for the delete_burger_day field.
+func (r *mutationResolver) DeleteBurgerDay(ctx context.Context, burgerDayID string) (*string, error) {
+	u := auth.ForContext(ctx)
+
+	// Create a slice of allowed emails
+	allowedEmails := []string{"simon.egeberg@twoday.com", "seg@it-minds.dk", "simon.bundgaard-egeberg@twoday.com"}
+
+	// Check if the user's email is in the allowed list
+	emailAllowed := false
+	for _, email := range allowedEmails {
+		if u.Email == email {
+			emailAllowed = true
+			break
+		}
+	}
+
+	// If email not allowed, return permission error
+	if !emailAllowed {
+		return nil, errors.New("permission denied: user not authorized to delete burger days")
+	}
+
+	// Then delete it
+	res := r.DB.Delete(&persistence.BurgerDay{ID: burgerDayID})
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return &burgerDayID, nil
+}
+
 // BurgerDay is the resolver for the burgerDay field.
 func (r *orderResolver) BurgerDay(ctx context.Context, obj *model.Order) (*model.BurgerDay, error) {
 	burgerDay := &persistence.BurgerDay{ID: obj.BurgerDayId}
@@ -289,22 +329,6 @@ func (r *queryResolver) Order(ctx context.Context, id string) (*model.Order, err
 	}
 
 	return persistence.OrderToModel(&order), nil
-}
-
-func (r *mutationResolver) Login(ctx context.Context, email string) (*string, error) {
-	user := &persistence.User{}
-
-	result := r.DB.Where(persistence.User{Email: email}).Attrs(persistence.User{
-		ID:   uuid.New().String(), // Only set ID if creating a new record
-		Name: "simon",
-	}).FirstOrCreate(user)
-
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	token, err := auth.SignToken(user)
-
-	return &token, err
 }
 
 // Orders is the resolver for the orders field.

@@ -1,13 +1,13 @@
 # GraphQL schema example
 # https://gqlgen.com/getting-started/
 
-enum SpecialOrders  {
-    chili_mayo,
-    garlic_mayo,
-    gluten_free_bun,
-    no_bacon,
-    no_cheese,
-    no_salad,
+enum SpecialOrders {
+    chili_mayo
+    garlic_mayo
+    gluten_free_bun
+    no_bacon
+    no_cheese
+    no_salad
     vegetarian_patty
 }
 
@@ -29,6 +29,7 @@ type BurgerDay {
     estimatedTime: String!
     id: ID!
     orders: [Order!]!
+    ordersCount: Int!
     price: Float!
 }
 
@@ -47,11 +48,16 @@ type Consumer {
 type Mutation {
     close_burger_day(burgerDayId: ID!): BurgerDay!
     create_user(name: String!, email: String!): User!
-    orderBurger( burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
+    orderBurger(burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
     pay_order(order_id: ID!, user_id: ID!): Order!
     start_burger_day: BurgerDay!
-    update_burger_day(burgerDayId: ID!, estimatedTime: String, price: Float): BurgerDay!
+    update_burger_day(
+        burgerDayId: ID!
+        estimatedTime: String
+        price: Float
+    ): BurgerDay!
     update_user(name: String, email: String, phoneNumber: String): User!
+    delete_burger_day(burgerDayId: ID!): String
 }
 
 type Order {

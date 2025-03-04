@@ -67,6 +67,7 @@ type ComplexityRoot struct {
 		EstimatedTime func(childComplexity int) int
 		ID            func(childComplexity int) int
 		Orders        func(childComplexity int) int
+		OrdersCount   func(childComplexity int) int
 		Price         func(childComplexity int) int
 	}
 
@@ -85,6 +86,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CloseBurgerDay  func(childComplexity int, burgerDayID string) int
 		CreateUser      func(childComplexity int, name string, email string) int
+		DeleteBurgerDay func(childComplexity int, burgerDayID string) int
 		OrderBurger     func(childComplexity int, burgerDayID string, specialRequest []model.SpecialOrders) int
 		PayOrder        func(childComplexity int, orderID string, userID string) int
 		StartBurgerDay  func(childComplexity int) int
@@ -125,6 +127,7 @@ type BurgerDayResolver interface {
 	Author(ctx context.Context, obj *model.BurgerDay) (*model.User, error)
 
 	Orders(ctx context.Context, obj *model.BurgerDay) ([]*model.Order, error)
+	OrdersCount(ctx context.Context, obj *model.BurgerDay) (int, error)
 }
 type MutationResolver interface {
 	CloseBurgerDay(ctx context.Context, burgerDayID string) (*model.BurgerDay, error)
@@ -134,6 +137,7 @@ type MutationResolver interface {
 	StartBurgerDay(ctx context.Context) (*model.BurgerDay, error)
 	UpdateBurgerDay(ctx context.Context, burgerDayID string, estimatedTime *string, price *float64) (*model.BurgerDay, error)
 	UpdateUser(ctx context.Context, name *string, email *string, phoneNumber *string) (*model.User, error)
+	DeleteBurgerDay(ctx context.Context, burgerDayID string) (*string, error)
 }
 type OrderResolver interface {
 	BurgerDay(ctx context.Context, obj *model.Order) (*model.BurgerDay, error)
@@ -249,6 +253,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BurgerDay.Orders(childComplexity), true
 
+	case "BurgerDay.ordersCount":
+		if e.complexity.BurgerDay.OrdersCount == nil {
+			break
+		}
+
+		return e.complexity.BurgerDay.OrdersCount(childComplexity), true
+
 	case "BurgerDay.price":
 		if e.complexity.BurgerDay.Price == nil {
 			break
@@ -321,6 +332,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateUser(childComplexity, args["name"].(string), args["email"].(string)), true
+
+	case "Mutation.delete_burger_day":
+		if e.complexity.Mutation.DeleteBurgerDay == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_delete_burger_day_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteBurgerDay(childComplexity, args["burgerDayId"].(string)), true
 
 	case "Mutation.orderBurger":
 		if e.complexity.Mutation.OrderBurger == nil {
@@ -684,6 +707,21 @@ func (ec *executionContext) field_Mutation_create_user_args(ctx context.Context,
 		}
 	}
 	args["email"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_delete_burger_day_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["burgerDayId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("burgerDayId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["burgerDayId"] = arg0
 	return args, nil
 }
 
@@ -1411,6 +1449,50 @@ func (ec *executionContext) fieldContext_BurgerDay_orders(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _BurgerDay_ordersCount(ctx context.Context, field graphql.CollectedField, obj *model.BurgerDay) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BurgerDay_ordersCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.BurgerDay().OrdersCount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BurgerDay_ordersCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BurgerDay",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BurgerDay_price(ctx context.Context, field graphql.CollectedField, obj *model.BurgerDay) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_BurgerDay_price(ctx, field)
 	if err != nil {
@@ -1788,6 +1870,8 @@ func (ec *executionContext) fieldContext_Mutation_close_burger_day(ctx context.C
 				return ec.fieldContext_BurgerDay_id(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "ordersCount":
+				return ec.fieldContext_BurgerDay_ordersCount(ctx, field)
 			case "price":
 				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
@@ -2058,6 +2142,8 @@ func (ec *executionContext) fieldContext_Mutation_start_burger_day(ctx context.C
 				return ec.fieldContext_BurgerDay_id(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "ordersCount":
+				return ec.fieldContext_BurgerDay_ordersCount(ctx, field)
 			case "price":
 				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
@@ -2118,6 +2204,8 @@ func (ec *executionContext) fieldContext_Mutation_update_burger_day(ctx context.
 				return ec.fieldContext_BurgerDay_id(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "ordersCount":
+				return ec.fieldContext_BurgerDay_ordersCount(ctx, field)
 			case "price":
 				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
@@ -2203,6 +2291,58 @@ func (ec *executionContext) fieldContext_Mutation_update_user(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_delete_burger_day(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_delete_burger_day(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteBurgerDay(rctx, fc.Args["burgerDayId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_delete_burger_day(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_delete_burger_day_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Order_burgerDay(ctx context.Context, field graphql.CollectedField, obj *model.Order) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Order_burgerDay(ctx, field)
 	if err != nil {
@@ -2254,6 +2394,8 @@ func (ec *executionContext) fieldContext_Order_burgerDay(ctx context.Context, fi
 				return ec.fieldContext_BurgerDay_id(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "ordersCount":
+				return ec.fieldContext_BurgerDay_ordersCount(ctx, field)
 			case "price":
 				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
@@ -2546,6 +2688,8 @@ func (ec *executionContext) fieldContext_Query_burger_day(ctx context.Context, f
 				return ec.fieldContext_BurgerDay_id(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "ordersCount":
+				return ec.fieldContext_BurgerDay_ordersCount(ctx, field)
 			case "price":
 				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
@@ -2617,6 +2761,8 @@ func (ec *executionContext) fieldContext_Query_burger_days(ctx context.Context, 
 				return ec.fieldContext_BurgerDay_id(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "ordersCount":
+				return ec.fieldContext_BurgerDay_ordersCount(ctx, field)
 			case "price":
 				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
@@ -2846,6 +2992,8 @@ func (ec *executionContext) fieldContext_Query_todays_burgers(ctx context.Contex
 				return ec.fieldContext_BurgerDay_id(ctx, field)
 			case "orders":
 				return ec.fieldContext_BurgerDay_orders(ctx, field)
+			case "ordersCount":
+				return ec.fieldContext_BurgerDay_ordersCount(ctx, field)
 			case "price":
 				return ec.fieldContext_BurgerDay_price(ctx, field)
 			}
@@ -5301,6 +5449,42 @@ func (ec *executionContext) _BurgerDay(ctx context.Context, sel ast.SelectionSet
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "ordersCount":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._BurgerDay_ordersCount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "price":
 			out.Values[i] = ec._BurgerDay_price(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -5495,6 +5679,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "delete_burger_day":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_delete_burger_day(ctx, field)
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
