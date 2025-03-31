@@ -400,7 +400,16 @@ func (r *mutationResolver) RingBurgerBell(ctx context.Context, message string) (
 
 // BurgerBell is the resolver for the burgerBell field.
 func (r *subscriptionResolver) BurgerBell(ctx context.Context) (<-chan *model.BurgerBellEvent, error) {
-	return r.BurgerBellChan, nil
+	// Register a new subscriber and get a unique channel
+	id, ch := r.RegisterSubscriber()
+	
+	// Set up cleanup when the context is done
+	go func() {
+		<-ctx.Done()
+		r.UnregisterSubscriber(id)
+	}()
+	
+	return ch, nil
 }
 
 // BurgerDay returns BurgerDayResolver implementation.
