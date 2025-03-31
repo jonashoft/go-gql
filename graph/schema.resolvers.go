@@ -393,15 +393,9 @@ func (r *mutationResolver) RingBurgerBell(ctx context.Context, message string) (
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
 
-	// Send the event to the channel
-	select {
-	case r.BurgerBellChan <- event:
-		return true, nil
-	default:
-		// If the channel is full, we can choose to either block or return an error
-		// Here we're returning an error to avoid blocking
-		return false, errors.New("burger bell channel is full")
-	}
+	// Use PublishBurgerBellEvent to send the event to all subscribers
+	r.PublishBurgerBellEvent(event)
+	return true, nil
 }
 
 // BurgerBell is the resolver for the burgerBell field.
