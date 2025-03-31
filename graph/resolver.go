@@ -1,10 +1,11 @@
 package graph
 
 import (
-	"github.com/google/uuid"
-	"gorm.io/gorm"
 	"graphql-go/graph/model"
 	"sync"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 //go:generate go run github.com/99designs/gqlgen generate
@@ -69,20 +70,6 @@ func (r *Resolver) PublishBurgerBellEvent(event *model.BurgerBellEvent) {
 		// Event sent successfully
 	default:
 		// Channel is full, could log this or handle it differently
-	}
-	
-	// Directly send to all subscribers
-	r.subscribersMutex.Lock()
-	defer r.subscribersMutex.Unlock()
-	
-	for _, ch := range r.subscribers {
-		// Non-blocking send to each subscriber
-		select {
-		case ch <- event:
-			// Event sent successfully
-		default:
-			// Channel is full, could log this or handle it differently
-		}
 	}
 }
 
