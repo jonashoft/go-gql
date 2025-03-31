@@ -63,7 +63,27 @@ func (r *Resolver) UnregisterSubscriber(id string) {
 
 // PublishBurgerBellEvent sends an event to all subscribers
 func (r *Resolver) PublishBurgerBellEvent(event *model.BurgerBellEvent) {
-	r.BurgerBellChan <- event // For backward compatibility
+	// Send to main channel for backward compatibility
+	select {
+	case r.BurgerBellChan <- event:
+		// Event sent successfully
+	default:
+		// Channel is full, could log this or handle it differently
+	}
+	
+	// Directly send to all subscribers
+	r.subscribersMutex.Lock()
+	defer r.subscribersMutex.Unlock()
+	
+	for _, ch := range r.subscribers {
+		// Non-blocking send to each subscriber
+		select {
+		case ch <- event:
+			// Event sent successfully
+		default:
+			// Channel is full, could log this or handle it differently
+		}
+	}
 }
 
 // broadcastEvents listens for events on the main channel and broadcasts them to all subscribers
