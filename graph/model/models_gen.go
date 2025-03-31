@@ -19,6 +19,11 @@ type AccumulatedOrders struct {
 	ToOrder []*AccumulatedOrderLine `json:"to_order"`
 }
 
+type BurgerBellEvent struct {
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+}
+
 type BurgerStats struct {
 	TopConsumers    []*Consumer `json:"topConsumers"`
 	TotalBurgerDays int         `json:"totalBurgerDays"`
@@ -35,6 +40,9 @@ type Mutation struct {
 }
 
 type Query struct {
+}
+
+type Subscription struct {
 }
 
 type User struct {

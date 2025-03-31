@@ -11,6 +11,7 @@ import (
 	"graphql-go/core/stats"
 	"graphql-go/graph/model"
 	"graphql-go/persistence"
+	"slices"
 	"strings"
 	"time"
 
@@ -202,13 +203,7 @@ func (r *mutationResolver) DeleteBurgerDay(ctx context.Context, burgerDayID stri
 	allowedEmails := []string{"simon.egeberg@twoday.com", "seg@it-minds.dk", "simon.bundgaard-egeberg@twoday.com"}
 
 	// Check if the user's email is in the allowed list
-	emailAllowed := false
-	for _, email := range allowedEmails {
-		if u.Email == email {
-			emailAllowed = true
-			break
-		}
-	}
+	emailAllowed := slices.Contains(allowedEmails, u.Email)
 
 	// If email not allowed, return permission error
 	if !emailAllowed {
@@ -390,6 +385,30 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	return persistence.UserToModel(user), nil
 }
 
+// RingBurgerBell is the resolver for the ringBurgerBell field.
+func (r *mutationResolver) RingBurgerBell(ctx context.Context, message string) (bool, error) {
+	// Create a new BurgerBellEvent with the message and current timestamp
+	event := &model.BurgerBellEvent{
+		Message:   message,
+		Timestamp: time.Now().Format(time.RFC3339),
+	}
+
+	// Send the event to the channel
+	select {
+	case r.BurgerBellChan <- event:
+		return true, nil
+	default:
+		// If the channel is full, we can choose to either block or return an error
+		// Here we're returning an error to avoid blocking
+		return false, errors.New("burger bell channel is full")
+	}
+}
+
+// BurgerBell is the resolver for the burgerBell field.
+func (r *subscriptionResolver) BurgerBell(ctx context.Context) (<-chan *model.BurgerBellEvent, error) {
+	return r.BurgerBellChan, nil
+}
+
 // BurgerDay returns BurgerDayResolver implementation.
 func (r *Resolver) BurgerDay() BurgerDayResolver { return &burgerDayResolver{r} }
 
@@ -402,7 +421,13 @@ func (r *Resolver) Order() OrderResolver { return &orderResolver{r} }
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// Subscription returns SubscriptionResolver implementation.
+func (r *Resolver) Subscription() SubscriptionResolver {
+	return &subscriptionResolver{r}
+}
+
 type burgerDayResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type orderResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }

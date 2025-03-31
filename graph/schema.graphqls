@@ -22,6 +22,11 @@ type AccumulatedOrders {
     to_order: [AccumulatedOrderLine!]!
 }
 
+type BurgerBellEvent {
+    message: String!
+    timestamp: String!
+}
+
 type BurgerDay {
     author: User!
     closed: Boolean!
@@ -50,6 +55,7 @@ type Mutation {
     create_user(name: String!, email: String!): User!
     orderBurger(burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
     pay_order(order_id: ID!, user_id: ID!): Order!
+    ringBurgerBell(message: String!): Boolean!
     start_burger_day: BurgerDay!
     update_burger_day(
         burgerDayId: ID!
@@ -79,6 +85,10 @@ type Query {
     user(id: ID!): User
     users: [User!]!
     me: User
+}
+
+type Subscription {
+    burgerBell: BurgerBellEvent!
 }
 
 type User {

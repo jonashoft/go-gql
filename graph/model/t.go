@@ -9,6 +9,7 @@ type Order struct {
 	Paid           bool            `json:"payed"`
 	SpecialRequest []SpecialOrders `json:"specialRequest"`
 }
+
 type BurgerDay struct {
 	ID            string   `json:"id"`
 	Author        *User    `json:"author"`

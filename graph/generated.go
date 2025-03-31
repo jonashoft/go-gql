@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"graphql-go/graph/model"
+	"io"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -43,6 +44,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Order() OrderResolver
 	Query() QueryResolver
+	Subscription() SubscriptionResolver
 }
 
 type DirectiveRoot struct {
@@ -58,6 +60,11 @@ type ComplexityRoot struct {
 		Count   func(childComplexity int) int
 		ID      func(childComplexity int) int
 		ToOrder func(childComplexity int) int
+	}
+
+	BurgerBellEvent struct {
+		Message   func(childComplexity int) int
+		Timestamp func(childComplexity int) int
 	}
 
 	BurgerDay struct {
@@ -89,6 +96,7 @@ type ComplexityRoot struct {
 		DeleteBurgerDay func(childComplexity int, burgerDayID string) int
 		OrderBurger     func(childComplexity int, burgerDayID string, specialRequest []model.SpecialOrders) int
 		PayOrder        func(childComplexity int, orderID string, userID string) int
+		RingBurgerBell  func(childComplexity int, message string) int
 		StartBurgerDay  func(childComplexity int) int
 		UpdateBurgerDay func(childComplexity int, burgerDayID string, estimatedTime *string, price *float64) int
 		UpdateUser      func(childComplexity int, name *string, email *string, phoneNumber *string) int
@@ -115,6 +123,10 @@ type ComplexityRoot struct {
 		Users             func(childComplexity int) int
 	}
 
+	Subscription struct {
+		BurgerBell func(childComplexity int) int
+	}
+
 	User struct {
 		Email       func(childComplexity int) int
 		ID          func(childComplexity int) int
@@ -134,6 +146,7 @@ type MutationResolver interface {
 	CreateUser(ctx context.Context, name string, email string) (*model.User, error)
 	OrderBurger(ctx context.Context, burgerDayID string, specialRequest []model.SpecialOrders) (*model.Order, error)
 	PayOrder(ctx context.Context, orderID string, userID string) (*model.Order, error)
+	RingBurgerBell(ctx context.Context, message string) (bool, error)
 	StartBurgerDay(ctx context.Context) (*model.BurgerDay, error)
 	UpdateBurgerDay(ctx context.Context, burgerDayID string, estimatedTime *string, price *float64) (*model.BurgerDay, error)
 	UpdateUser(ctx context.Context, name *string, email *string, phoneNumber *string) (*model.User, error)
@@ -155,6 +168,9 @@ type QueryResolver interface {
 	User(ctx context.Context, id string) (*model.User, error)
 	Users(ctx context.Context) ([]*model.User, error)
 	Me(ctx context.Context) (*model.User, error)
+}
+type SubscriptionResolver interface {
+	BurgerBell(ctx context.Context) (<-chan *model.BurgerBellEvent, error)
 }
 
 type executableSchema struct {
@@ -210,6 +226,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AccumulatedOrders.ToOrder(childComplexity), true
+
+	case "BurgerBellEvent.message":
+		if e.complexity.BurgerBellEvent.Message == nil {
+			break
+		}
+
+		return e.complexity.BurgerBellEvent.Message(childComplexity), true
+
+	case "BurgerBellEvent.timestamp":
+		if e.complexity.BurgerBellEvent.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.BurgerBellEvent.Timestamp(childComplexity), true
 
 	case "BurgerDay.author":
 		if e.complexity.BurgerDay.Author == nil {
@@ -369,6 +399,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PayOrder(childComplexity, args["order_id"].(string), args["user_id"].(string)), true
 
+	case "Mutation.ringBurgerBell":
+		if e.complexity.Mutation.RingBurgerBell == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_ringBurgerBell_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RingBurgerBell(childComplexity, args["message"].(string)), true
+
 	case "Mutation.start_burger_day":
 		if e.complexity.Mutation.StartBurgerDay == nil {
 			break
@@ -520,6 +562,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Users(childComplexity), true
 
+	case "Subscription.burgerBell":
+		if e.complexity.Subscription.BurgerBell == nil {
+			break
+		}
+
+		return e.complexity.Subscription.BurgerBell(childComplexity), true
+
 	case "User.email":
 		if e.complexity.User.Email == nil {
 			break
@@ -598,6 +647,23 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
 			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
 			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
+	case ast.Subscription:
+		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
+
+		var buf bytes.Buffer
+		return func(ctx context.Context) *graphql.Response {
+			buf.Reset()
+			data := next(ctx)
+
+			if data == nil {
+				return nil
+			}
 			data.MarshalGQL(&buf)
 
 			return &graphql.Response{
@@ -770,6 +836,21 @@ func (ec *executionContext) field_Mutation_pay_order_args(ctx context.Context, r
 		}
 	}
 	args["user_id"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_ringBurgerBell_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["message"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("message"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["message"] = arg0
 	return args, nil
 }
 
@@ -1158,6 +1239,94 @@ func (ec *executionContext) fieldContext_AccumulatedOrders_to_order(ctx context.
 				return ec.fieldContext_AccumulatedOrderLine_specialRequest(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AccumulatedOrderLine", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BurgerBellEvent_message(ctx context.Context, field graphql.CollectedField, obj *model.BurgerBellEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BurgerBellEvent_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BurgerBellEvent_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BurgerBellEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BurgerBellEvent_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.BurgerBellEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BurgerBellEvent_timestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BurgerBellEvent_timestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BurgerBellEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2085,6 +2254,61 @@ func (ec *executionContext) fieldContext_Mutation_pay_order(ctx context.Context,
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_pay_order_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_ringBurgerBell(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_ringBurgerBell(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RingBurgerBell(rctx, fc.Args["message"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_ringBurgerBell(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_ringBurgerBell_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3294,6 +3518,70 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Subscription_burgerBell(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
+	fc, err := ec.fieldContext_Subscription_burgerBell(ctx, field)
+	if err != nil {
+		return nil
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().BurgerBell(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func(ctx context.Context) graphql.Marshaler {
+		select {
+		case res, ok := <-resTmp.(<-chan *model.BurgerBellEvent):
+			if !ok {
+				return nil
+			}
+			return graphql.WriterFunc(func(w io.Writer) {
+				w.Write([]byte{'{'})
+				graphql.MarshalString(field.Alias).MarshalGQL(w)
+				w.Write([]byte{':'})
+				ec.marshalNBurgerBellEvent2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐBurgerBellEvent(ctx, field.Selections, res).MarshalGQL(w)
+				w.Write([]byte{'}'})
+			})
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+func (ec *executionContext) fieldContext_Subscription_burgerBell(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "message":
+				return ec.fieldContext_BurgerBellEvent_message(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_BurgerBellEvent_timestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BurgerBellEvent", field.Name)
 		},
 	}
 	return fc, nil
@@ -5346,6 +5634,50 @@ func (ec *executionContext) _AccumulatedOrders(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var burgerBellEventImplementors = []string{"BurgerBellEvent"}
+
+func (ec *executionContext) _BurgerBellEvent(ctx context.Context, sel ast.SelectionSet, obj *model.BurgerBellEvent) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, burgerBellEventImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BurgerBellEvent")
+		case "message":
+			out.Values[i] = ec._BurgerBellEvent_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "timestamp":
+			out.Values[i] = ec._BurgerBellEvent_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var burgerDayImplementors = []string{"BurgerDay"}
 
 func (ec *executionContext) _BurgerDay(ctx context.Context, sel ast.SelectionSet, obj *model.BurgerDay) graphql.Marshaler {
@@ -5654,6 +5986,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "pay_order":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_pay_order(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "ringBurgerBell":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_ringBurgerBell(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -6077,6 +6416,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	}
 
 	return out
+}
+
+var subscriptionImplementors = []string{"Subscription"}
+
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func(ctx context.Context) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, subscriptionImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "burgerBell":
+		return ec._Subscription_burgerBell(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
 }
 
 var userImplementors = []string{"User"}
@@ -6523,6 +6882,20 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNBurgerBellEvent2graphqlᚑgoᚋgraphᚋmodelᚐBurgerBellEvent(ctx context.Context, sel ast.SelectionSet, v model.BurgerBellEvent) graphql.Marshaler {
+	return ec._BurgerBellEvent(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBurgerBellEvent2ᚖgraphqlᚑgoᚋgraphᚋmodelᚐBurgerBellEvent(ctx context.Context, sel ast.SelectionSet, v *model.BurgerBellEvent) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BurgerBellEvent(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNBurgerDay2graphqlᚑgoᚋgraphᚋmodelᚐBurgerDay(ctx context.Context, sel ast.SelectionSet, v model.BurgerDay) graphql.Marshaler {

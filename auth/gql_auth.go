@@ -23,6 +23,15 @@ type contextKey struct {
 func Middleware(db *gorm.DB) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Special handling for WebSocket connections
+			// Check if this is a WebSocket upgrade request
+			if websocket := r.Header.Get("Upgrade"); websocket == "websocket" {
+				// Allow WebSocket upgrade requests to proceed without authentication
+				// The subscription resolvers can implement their own auth if needed
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			// Check for JWT in Authorization header
 			authHeader := r.Header.Get("Authorization")
 
