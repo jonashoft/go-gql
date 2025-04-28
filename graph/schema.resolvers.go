@@ -145,7 +145,7 @@ func (r *mutationResolver) StartBurgerDay(ctx context.Context) (*model.BurgerDay
 }
 
 // UpdateBurgerDay is the resolver for the update_burger_day field.
-func (r *mutationResolver) UpdateBurgerDay(ctx context.Context, burgerDayID string, estimatedTime *string, price *float64) (*model.BurgerDay, error) {
+func (r *mutationResolver) UpdateBurgerDay(ctx context.Context, burgerDayID string, estimatedTime *string, price *float64, closed *bool) (*model.BurgerDay, error) {
 	burgerDay := &persistence.BurgerDay{ID: burgerDayID}
 	res := r.DB.First(burgerDay)
 	if res.Error != nil {
@@ -158,6 +158,9 @@ func (r *mutationResolver) UpdateBurgerDay(ctx context.Context, burgerDayID stri
 	if price != nil {
 		burgerDay.Price = *price
 	}
+	if closed != nil {
+		burgerDay.Closed = *closed
+	}
 
 	res = r.DB.Save(burgerDay)
 	if res.Error != nil {
@@ -166,6 +169,7 @@ func (r *mutationResolver) UpdateBurgerDay(ctx context.Context, burgerDayID stri
 
 	return persistence.BurgerDayToModel(burgerDay), nil
 }
+
 
 // UpdateUser is the resolver for the update_user field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, name *string, email *string, phoneNumber *string) (*model.User, error) {

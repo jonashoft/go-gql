@@ -98,7 +98,7 @@ type ComplexityRoot struct {
 		PayOrder        func(childComplexity int, orderID string, userID string) int
 		RingBurgerBell  func(childComplexity int, message string) int
 		StartBurgerDay  func(childComplexity int) int
-		UpdateBurgerDay func(childComplexity int, burgerDayID string, estimatedTime *string, price *float64) int
+		UpdateBurgerDay func(childComplexity int, burgerDayID string, estimatedTime *string, price *float64, closed *bool) int
 		UpdateUser      func(childComplexity int, name *string, email *string, phoneNumber *string) int
 	}
 
@@ -148,7 +148,7 @@ type MutationResolver interface {
 	PayOrder(ctx context.Context, orderID string, userID string) (*model.Order, error)
 	RingBurgerBell(ctx context.Context, message string) (bool, error)
 	StartBurgerDay(ctx context.Context) (*model.BurgerDay, error)
-	UpdateBurgerDay(ctx context.Context, burgerDayID string, estimatedTime *string, price *float64) (*model.BurgerDay, error)
+	UpdateBurgerDay(ctx context.Context, burgerDayID string, estimatedTime *string, price *float64, closed *bool) (*model.BurgerDay, error)
 	UpdateUser(ctx context.Context, name *string, email *string, phoneNumber *string) (*model.User, error)
 	DeleteBurgerDay(ctx context.Context, burgerDayID string) (*string, error)
 }
@@ -428,7 +428,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateBurgerDay(childComplexity, args["burgerDayId"].(string), args["estimatedTime"].(*string), args["price"].(*float64)), true
+		return e.complexity.Mutation.UpdateBurgerDay(childComplexity, args["burgerDayId"].(string), args["estimatedTime"].(*string), args["price"].(*float64), args["closed"].(*bool)), true
 
 	case "Mutation.update_user":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -884,6 +884,15 @@ func (ec *executionContext) field_Mutation_update_burger_day_args(ctx context.Co
 		}
 	}
 	args["price"] = arg2
+	var arg3 *bool
+	if tmp, ok := rawArgs["closed"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("closed"))
+		arg3, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["closed"] = arg3
 	return args, nil
 }
 
@@ -2391,7 +2400,7 @@ func (ec *executionContext) _Mutation_update_burger_day(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateBurgerDay(rctx, fc.Args["burgerDayId"].(string), fc.Args["estimatedTime"].(*string), fc.Args["price"].(*float64))
+		return ec.resolvers.Mutation().UpdateBurgerDay(rctx, fc.Args["burgerDayId"].(string), fc.Args["estimatedTime"].(*string), fc.Args["price"].(*float64), fc.Args["closed"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

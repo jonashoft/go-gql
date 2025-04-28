@@ -2,98 +2,100 @@
 # https://gqlgen.com/getting-started/
 
 enum SpecialOrders {
-    chili_mayo
-    garlic_mayo
-    gluten_free_bun
-    no_bacon
-    no_cheese
-    no_salad
-    vegetarian_patty
+	chili_mayo
+	garlic_mayo
+	ketchup
+	gluten_free_bun
+	no_bacon
+	no_cheese
+	no_salad
+	vegetarian_patty
 }
 
 type AccumulatedOrderLine {
-    amount: Int!
-    specialRequest: [SpecialOrders!]!
+	amount: Int!
+	specialRequest: [SpecialOrders!]!
 }
 
 type AccumulatedOrders {
-    count: Int!
-    id: ID!
-    to_order: [AccumulatedOrderLine!]!
+	count: Int!
+	id: ID!
+	to_order: [AccumulatedOrderLine!]!
 }
 
 type BurgerBellEvent {
-    message: String!
-    timestamp: String!
+	message: String!
+	timestamp: String!
 }
 
 type BurgerDay {
-    author: User!
-    closed: Boolean!
-    date: String!
-    estimatedTime: String!
-    id: ID!
-    orders: [Order!]!
-    ordersCount: Int!
-    price: Float!
+	author: User!
+	closed: Boolean!
+	date: String!
+	estimatedTime: String!
+	id: ID!
+	orders: [Order!]!
+	ordersCount: Int!
+	price: Float!
 }
 
 type BurgerStats {
-    topConsumers: [Consumer!]!
-    totalBurgerDays: Int!
-    totalOrders: Int!
+	topConsumers: [Consumer!]!
+	totalBurgerDays: Int!
+	totalOrders: Int!
 }
 
 type Consumer {
-    totalBurgerDays: Int!
-    totalOrders: Int!
-    user: User!
+	totalBurgerDays: Int!
+	totalOrders: Int!
+	user: User!
 }
 
 type Mutation {
-    close_burger_day(burgerDayId: ID!): BurgerDay!
-    create_user(name: String!, email: String!): User!
-    orderBurger(burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
-    pay_order(order_id: ID!, user_id: ID!): Order!
-    ringBurgerBell(message: String!): Boolean!
-    start_burger_day: BurgerDay!
-    update_burger_day(
-        burgerDayId: ID!
-        estimatedTime: String
-        price: Float
-    ): BurgerDay!
-    update_user(name: String, email: String, phoneNumber: String): User!
-    delete_burger_day(burgerDayId: ID!): String
+	close_burger_day(burgerDayId: ID!): BurgerDay!
+	create_user(name: String!, email: String!): User!
+	orderBurger(burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
+	pay_order(order_id: ID!, user_id: ID!): Order!
+	ringBurgerBell(message: String!): Boolean!
+	start_burger_day: BurgerDay!
+	update_burger_day(
+		burgerDayId: ID!
+		estimatedTime: String
+		price: Float
+		closed: Boolean
+	): BurgerDay!
+	update_user(name: String, email: String, phoneNumber: String): User!
+	delete_burger_day(burgerDayId: ID!): String
 }
 
 type Order {
-    burgerDay: BurgerDay!
-    id: ID!
-    paid: Boolean!
-    specialRequest: [SpecialOrders!]!
-    user: User!
+	burgerDay: BurgerDay!
+	id: ID!
+	paid: Boolean!
+	specialRequest: [SpecialOrders!]!
+	user: User!
 }
 
 type Query {
-    accumulated_orders: AccumulatedOrders
-    burger_day(id: ID!): BurgerDay
-    burger_days: [BurgerDay!]!
-    burgerStats: BurgerStats!
-    order(id: ID!): Order
-    orders: [Order!]!
-    todays_burgers: BurgerDay
-    user(id: ID!): User
-    users: [User!]!
-    me: User
+	accumulated_orders: AccumulatedOrders
+	burger_day(id: ID!): BurgerDay
+	burger_days: [BurgerDay!]!
+	burgerStats: BurgerStats!
+	order(id: ID!): Order
+	orders: [Order!]!
+	todays_burgers: BurgerDay
+	user(id: ID!): User
+	users: [User!]!
+	me: User
 }
 
 type Subscription {
-    burgerBell: BurgerBellEvent!
+	burgerBell: BurgerBellEvent!
 }
 
 type User {
-    email: String!
-    id: ID!
-    name: String!
-    phoneNumber: String
+	email: String!
+	id: ID!
+	name: String!
+	phoneNumber: String
 }

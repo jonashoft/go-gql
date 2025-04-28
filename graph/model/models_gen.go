@@ -57,6 +57,7 @@ type SpecialOrders string
 const (
 	SpecialOrdersChiliMayo       SpecialOrders = "chili_mayo"
 	SpecialOrdersGarlicMayo      SpecialOrders = "garlic_mayo"
+	SpecialOrdersKetchup         SpecialOrders = "ketchup"
 	SpecialOrdersGlutenFreeBun   SpecialOrders = "gluten_free_bun"
 	SpecialOrdersNoBacon         SpecialOrders = "no_bacon"
 	SpecialOrdersNoCheese        SpecialOrders = "no_cheese"
@@ -67,6 +68,7 @@ const (
 var AllSpecialOrders = []SpecialOrders{
 	SpecialOrdersChiliMayo,
 	SpecialOrdersGarlicMayo,
+	SpecialOrdersKetchup,
 	SpecialOrdersGlutenFreeBun,
 	SpecialOrdersNoBacon,
 	SpecialOrdersNoCheese,
@@ -76,7 +78,7 @@ var AllSpecialOrders = []SpecialOrders{
 
 func (e SpecialOrders) IsValid() bool {
 	switch e {
-	case SpecialOrdersChiliMayo, SpecialOrdersGarlicMayo, SpecialOrdersGlutenFreeBun, SpecialOrdersNoBacon, SpecialOrdersNoCheese, SpecialOrdersNoSalad, SpecialOrdersVegetarianPatty:
+	case SpecialOrdersChiliMayo, SpecialOrdersGarlicMayo, SpecialOrdersKetchup, SpecialOrdersGlutenFreeBun, SpecialOrdersNoBacon, SpecialOrdersNoCheese, SpecialOrdersNoSalad, SpecialOrdersVegetarianPatty:
 		return true
 	}
 	return false
