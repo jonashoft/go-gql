@@ -113,7 +113,7 @@ func (r *mutationResolver) OrderBurger(ctx context.Context, burgerDayID string, 
 
 // DeleteBurger is the resolver for the deleteBurger mutation.
 // Only the owner of the burger day can delete ses
-func (r *mutationResolver) DeleteBurger(ctx context.Context, orderID string) (bool, error) {
+func (r *mutationResolver) DeleteOrder(ctx context.Context, orderID string) (bool, error) {
 	userCtx := auth.ForContext(ctx)
 
 	var order persistence.Order
