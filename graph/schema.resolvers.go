@@ -149,9 +149,14 @@ func (r *mutationResolver) PayOrder(ctx context.Context, orderID string, userID 
 		return nil, res.Error
 	}
 
-	order.Paid = true
+	order.Paid = !order.Paid
+
 	res = r.DB.Save(order)
-	return persistence.OrderToModel(order), res.Error
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return persistence.OrderToModel(order), nil
 }
 
 // StartBurgerDay is the resolver for the start_burger_day field.
