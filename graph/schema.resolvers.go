@@ -111,6 +111,35 @@ func (r *mutationResolver) OrderBurger(ctx context.Context, burgerDayID string, 
 	return persistence.OrderToModel(order), nil
 }
 
+// DeleteBurger is the resolver for the deleteBurger mutation.
+// Only the owner of the burger day can delete ses
+func (r *mutationResolver) DeleteBurger(ctx context.Context, orderID string) (bool, error) {
+	userCtx := auth.ForContext(ctx)
+
+	var order persistence.Order
+	if err := r.DB.First(&order, "id = ?", orderID).Error; err != nil {
+		return false, err
+	}
+
+	var burgerDay persistence.BurgerDay
+	if err := r.DB.First(&burgerDay, "id = ?", order.BurgerDayId).Error; err != nil {
+		return false, err
+	}
+
+	// Check if the logged-in user is the author of the burger day
+	if burgerDay.AuthorId != userCtx.ID {
+		return false, errors.New("only the owner of the burger day can delete orders")
+	}
+
+	// Delete the order
+	if err := r.DB.Delete(&order).Error; err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+
 // PayOrder is the resolver for the pay_order field.
 func (r *mutationResolver) PayOrder(ctx context.Context, orderID string, userID string) (*model.Order, error) {
 	order := &persistence.Order{ID: orderID}
