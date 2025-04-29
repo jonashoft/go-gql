@@ -238,7 +238,7 @@ func (r *mutationResolver) DeleteBurgerDay(ctx context.Context, burgerDayID stri
 	u := auth.ForContext(ctx)
 
 	// Create a slice of allowed emails
-	allowedEmails := []string{"simon.egeberg@twoday.com", "seg@it-minds.dk", "simon.bundgaard-egeberg@twoday.com"}
+	allowedEmails := []string{"simon.egeberg@twoday.com", "seg@it-minds.dk", "simon.bundgaard-egeberg@twoday.com", "katharina.vu@twoday.com"}
 
 	// Check if the user's email is in the allowed list
 	emailAllowed := slices.Contains(allowedEmails, u.Email)
